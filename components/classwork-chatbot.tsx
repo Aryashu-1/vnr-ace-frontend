@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, GraduationCap } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface Message {
     id: string
@@ -35,10 +36,10 @@ export function ClassworkChatbot() {
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
             // 1. SKIP LOGIN (Using Mock Auth on Backend for now)
-            // const loginRes = await fetch("http://localhost:8000/auth/login", ...
+            // const loginRes = await fetch(`${API_BASE_URL}/auth/login`, ...
 
             // 2. CALL CHAT ENDPOINT DIRECTLY
-            const chatRes = await fetch("http://localhost:8000/classwork/chat", {
+            const chatRes = await fetch(`${API_BASE_URL}/classwork/chat`, {
                 method: "POST",
                 headers: {
                     // Authorization: `Bearer ${token}`, // Not needed for mock

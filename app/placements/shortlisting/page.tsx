@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { Search, Filter, Briefcase } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface Student {
     id: number
@@ -29,7 +30,7 @@ export default function ShortlistingPage() {
             if (minGpa) formData.append("min_gpa", minGpa)
             if (branch) formData.append("branch", branch)
 
-            const res = await fetch("http://localhost:8000/placements/shortlist", {
+            const res = await fetch(`${API_BASE_URL}/placements/shortlist`, {
                 method: "POST",
                 body: formData
             })

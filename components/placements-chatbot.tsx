@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, LayoutDashboard, FileText, CheckCircle, TrendingUp, Zap, Building2, Code } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface Message {
     id: string
@@ -59,8 +60,7 @@ export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps
             // For now, let's map 'general' -> 'dashboard' or just error.
             // Let's assume 'dashboard' is the default catch-all if in general mode.
             const targetGraph = activeMode === "general" ? "dashboard" : activeMode
-
-            const chatRes = await fetch(`http://localhost:8000/placements/chat/${targetGraph}`, {
+            const chatRes = await fetch(`${API_BASE_URL}/placements/chat/${targetGraph}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -145,8 +145,8 @@ export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps
                     <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                         <div
                             className={`max-w-[85%] px-4 py-2 rounded-lg text-sm ${message.role === "user"
-                                    ? "bg-indigo-600 text-white rounded-br-none"
-                                    : "bg-gray-100 text-gray-900 rounded-bl-none"
+                                ? "bg-indigo-600 text-white rounded-br-none"
+                                : "bg-gray-100 text-gray-900 rounded-bl-none"
                                 }`}
                         >
                             <p>{message.content}</p>
@@ -175,8 +175,8 @@ export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps
                         key={action.label}
                         onClick={() => switchMode(action.mode)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${activeMode === action.mode
-                                ? "bg-indigo-600 text-white"
-                                : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
                             }`}
                     >
                         <action.icon size={12} />

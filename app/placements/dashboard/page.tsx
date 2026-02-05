@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { StatCard } from "@/components/stat-card"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { TrendingUp, Users } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface PlacementStats {
     stats: { label: string, value: string, trend?: number }[]
@@ -16,7 +17,7 @@ export default function PlacementsDashboardPage() {
 
     useEffect(() => {
         // Fetch mock stats
-        fetch("http://localhost:8000/placements/dashboard-stats")
+        fetch(`${API_BASE_URL}/placements/dashboard-stats`)
             .then(res => res.json())
             .then(setData)
             .catch(err => console.error(err))

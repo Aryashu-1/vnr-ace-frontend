@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 interface Message {
   id: string
@@ -35,7 +36,7 @@ export function AdmissionsChatbot() {
   const generateResponse = async (userInput: string): Promise<string> => {
     try {
       // 1️⃣ LOGIN → Get token
-      const loginRes = await fetch("http://localhost:8000/auth/login", {
+      const loginRes = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -53,7 +54,7 @@ export function AdmissionsChatbot() {
       const token = loginData.access_token
 
       // 2️⃣ CALL CHAT ENDPOINT
-      const chatRes = await fetch("http://localhost:8000/admissions/chat", {
+      const chatRes = await fetch(`${API_BASE_URL}/admissions/chat`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -117,11 +118,10 @@ export function AdmissionsChatbot() {
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-xs px-4 py-2 rounded-lg text-sm ${
-                message.role === "user"
+              className={`max-w-xs px-4 py-2 rounded-lg text-sm ${message.role === "user"
                   ? "bg-blue-600 text-white rounded-br-none"
                   : "bg-gray-100 text-gray-900 rounded-bl-none"
-              }`}
+                }`}
             >
               <p>{message.content}</p>
             </div>

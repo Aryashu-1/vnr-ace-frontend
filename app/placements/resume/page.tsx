@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { UploadCloud, FileType, CheckCircle, AlertCircle } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 export default function ResumeAnalysisPage() {
     const [file, setFile] = useState<File | null>(null)
@@ -20,7 +21,7 @@ export default function ResumeAnalysisPage() {
             const formData = new FormData()
             formData.append("file", file)
 
-            const res = await fetch("http://localhost:8000/placements/upload-resume", {
+            const res = await fetch(`${API_BASE_URL}/placements/upload-resume`, {
                 method: "POST",
                 body: formData
             })

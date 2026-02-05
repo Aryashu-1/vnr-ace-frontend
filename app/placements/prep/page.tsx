@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { Building2, BookOpen } from "lucide-react"
+import { API_BASE_URL } from "@/lib/api"
 
 export default function CompanyPrepPage() {
     const [companies, setCompanies] = useState<string[]>([])
@@ -11,7 +12,7 @@ export default function CompanyPrepPage() {
     const [selectedConcepts, setSelectedConcepts] = useState<string[]>([])
 
     useEffect(() => {
-        fetch("http://localhost:8000/placements/companies")
+        fetch(`${API_BASE_URL}/placements/companies`)
             .then(res => res.json())
             .then(setCompanies)
             .catch(console.error)
@@ -41,8 +42,8 @@ export default function CompanyPrepPage() {
                                     key={c}
                                     onClick={() => setSelectedCompany(c)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCompany === c
-                                            ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-200"
-                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-200"
+                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                         }`}
                                 >
                                     {c}
@@ -62,8 +63,8 @@ export default function CompanyPrepPage() {
                                     key={c}
                                     onClick={() => toggleConcept(c)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${selectedConcepts.includes(c)
-                                            ? "bg-orange-50 border-orange-200 text-orange-700"
-                                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                                        ? "bg-orange-50 border-orange-200 text-orange-700"
+                                        : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                                         }`}
                                 >
                                     {c}
