@@ -138,9 +138,9 @@ export default function ShortlistingPage() {
                 </div>
 
                 {/* Right: Chatbot */}
-                <div className="h-full min-h-[500px]">
+                {/* <div className="h-full min-h-[500px]">
                     <PlacementsChatbot initialMode="shortlisting" />
-                </div>
+                </div> */}
             </div>
         </div>
     )

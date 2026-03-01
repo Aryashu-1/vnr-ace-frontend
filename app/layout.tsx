@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 }
 
 import { MainLayout } from "@/components/main-layout"
+import { AuthProvider } from "@/components/auth-provider"
 
 export default function RootLayout({
   children,
@@ -40,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <MainLayout>{children}</MainLayout>
+        <AuthProvider>
+          <MainLayout>{children}</MainLayout>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

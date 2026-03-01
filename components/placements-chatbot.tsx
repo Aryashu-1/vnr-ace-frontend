@@ -15,9 +15,10 @@ type GraphType = "dashboard" | "resume" | "prep" | "shortlisting" | "tracking" |
 
 interface PlacementsChatbotProps {
     initialMode?: GraphType | null
+    context?: Record<string, any>
 }
 
-export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps) {
+export function PlacementsChatbot({ initialMode = null, context = {} }: PlacementsChatbotProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -66,7 +67,7 @@ export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ message: userInput }),
+                body: JSON.stringify({ message: userInput, context }),
             })
 
             if (!chatRes.ok) throw new Error("Chat request failed")
@@ -120,11 +121,11 @@ export function PlacementsChatbot({ initialMode = null }: PlacementsChatbotProps
 
     // Quick Actions / Mode Switchers
     const quickActions = [
-        { label: "Dashboard", icon: LayoutDashboard, mode: "dashboard" as GraphType },
-        { label: "Resume", icon: FileText, mode: "resume" as GraphType },
+        // { label: "Dashboard", icon: LayoutDashboard, mode: "dashboard" as GraphType },
+        // { label: "Resume", icon: FileText, mode: "resume" as GraphType },
         { label: "Prep", icon: Zap, mode: "prep" as GraphType },
-        { label: "Shortlisting", icon: CheckCircle, mode: "shortlisting" as GraphType },
-        { label: "Tracking", icon: TrendingUp, mode: "tracking" as GraphType },
+        // { label: "Shortlisting", icon: CheckCircle, mode: "shortlisting" as GraphType },
+        // { label: "Tracking", icon: TrendingUp, mode: "tracking" as GraphType },
     ]
 
     return (

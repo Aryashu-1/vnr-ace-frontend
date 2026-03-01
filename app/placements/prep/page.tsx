@@ -81,7 +81,13 @@ export default function CompanyPrepPage() {
 
                 {/* Right: Chatbot */}
                 <div className="h-full min-h-[500px]">
-                    <PlacementsChatbot initialMode="prep" />
+                    <PlacementsChatbot
+                        initialMode="prep"
+                        context={{
+                            company: selectedCompany,
+                            topics: selectedConcepts
+                        }}
+                    />
                 </div>
             </div>
         </div>

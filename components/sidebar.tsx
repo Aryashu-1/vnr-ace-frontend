@@ -31,6 +31,15 @@ export function Sidebar({ role }: SidebarProps) {
       { label: "Reports", href: "/reports", icon: FileText },
       { label: "Admin Panel", href: "/admin", icon: Settings },
     ],
+    guest: [
+      { label: "Admissions", href: "/admissions", icon: Users },
+    ],
+    placement_officer: [
+      { label: "Admissions", href: "/admissions", icon: Users },
+      { label: "Classwork", href: "/classwork", icon: BookOpen },
+      { label: "Placements", href: "/placements", icon: Briefcase },
+      { label: "Reports", href: "/reports", icon: FileText },
+    ],
   }
 
   const items = menuItems[role]

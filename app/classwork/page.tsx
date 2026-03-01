@@ -1,8 +1,25 @@
 "use client"
 
 import { ClassworkChatbot } from "@/components/classwork-chatbot"
+import { useAuth } from "@/components/auth-provider"
+import { SignInPrompt } from "@/components/sign-in-prompt"
+import { Loader2 } from "lucide-react"
 
 export default function ClassworkPage() {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  if (!user || user.role === "guest") {
+    return <SignInPrompt moduleName="Classwork" />
+  }
+
   return (
     <div className="space-y-6">
       <div>

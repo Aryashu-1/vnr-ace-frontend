@@ -83,9 +83,9 @@ export default function PlacementsDashboardPage() {
                 </div>
 
                 {/* Right: Chatbot */}
-                <div className="lg:col-span-1 h-full min-h-[500px]">
+                {/* <div className="lg:col-span-1 h-full min-h-[500px]">
                     <PlacementsChatbot initialMode="dashboard" />
-                </div>
+                </div> */}
             </div>
         </div>
     )

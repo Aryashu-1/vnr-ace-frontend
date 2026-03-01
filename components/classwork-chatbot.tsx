@@ -3,7 +3,8 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, GraduationCap } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, getToken } from "@/lib/api"
+import { useAuth } from "@/components/auth-provider"
 
 interface Message {
     id: string
@@ -12,6 +13,7 @@ interface Message {
 }
 
 export function ClassworkChatbot() {
+    const { user } = useAuth()
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "1",
@@ -35,30 +37,50 @@ export function ClassworkChatbot() {
     // Backend-connected function
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
-            // 1. SKIP LOGIN (Using Mock Auth on Backend for now)
-            // const loginRes = await fetch(`${API_BASE_URL}/auth/login`, ...
+            // Determine endpoint based on role
+            const endpoint = user?.role === 'student' ? '/classwork/student/chat' : '/classwork/chat'
+            const token = getToken()
 
-            // 2. CALL CHAT ENDPOINT DIRECTLY
-            const chatRes = await fetch(`${API_BASE_URL}/classwork/chat`, {
+            // Call Chat Endpoint
+            const timestamp = new Date().getTime()
+            const chatRes = await fetch(`${API_BASE_URL}${endpoint}`, {
                 method: "POST",
                 headers: {
-                    // Authorization: `Bearer ${token}`, // Not needed for mock
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
                 },
                 body: JSON.stringify({ message: userInput }),
+                cache: "no-store", // Prevent Next.js from caching
             })
 
             if (!chatRes.ok) {
                 const err = await chatRes.text()
-                console.error("Chat error:", err)
-                return "Server error. Unable to respond."
+                console.error("Chat error:", chatRes.status, err)
+                return `Server error (${chatRes.status}): ${err || "Unable to respond. Please check if the backend is running."}`
             }
 
             const data = await chatRes.json()
-            return data.reply || "No reply received."
+            console.log("API Response:", data) // Debug log
+
+            // Handle different response formats
+            if (data.reply) {
+                return data.reply
+            } else if (data.response) {
+                return data.response
+            } else if (data.message) {
+                return data.message
+            } else if (typeof data === "string") {
+                return data
+            } else {
+                console.warn("Unexpected response format:", data)
+                return JSON.stringify(data, null, 2)
+            }
         } catch (error) {
             console.error("Network error:", error)
-            return "Could not reach backend."
+            return `Could not reach backend at ${API_BASE_URL}. Error: ${error instanceof Error ? error.message : "Unknown error"}`
         }
     }
 

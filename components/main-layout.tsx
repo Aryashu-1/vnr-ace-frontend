@@ -8,27 +8,16 @@ import { ChatAssistant } from "@/components/chat-assistant"
 import { getUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
 import type { User } from "@/lib/auth"
+import { useAuth } from "@/components/auth-provider"
 
 export function MainLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const [user, setUser] = useState<User | null>(null)
+    const { user, isLoading } = useAuth()
 
-    useEffect(() => {
-        const mockUser = getUser("student1")
-        setUser(
-            mockUser || {
-                id: "guest",
-                name: "Guest User",
-                role: "student",
-                email: "guest@vnrace.edu",
-            },
-        )
-    }, [])
-
-    if (!user) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen bg-white">
                 <p className="text-gray-600">Loading...</p>
@@ -36,16 +25,24 @@ export function MainLayout({
         )
     }
 
+    const currentUser = user || {
+        id: "guest",
+        name: "Guest User",
+        email: "",
+        role: "guest",
+        avatar: "G",
+    }
+
     return (
         <div className="flex h-screen bg-gray-50">
-            <Sidebar role={user.role} />
+            <Sidebar role={currentUser.role} />
             <div className="flex-1 flex flex-col ml-64">
-                <Navbar user={user} />
+                <Navbar user={currentUser} />
                 <main className="flex-1 overflow-auto pt-16">
                     <div className="p-6">{children}</div>
                 </main>
             </div>
-            {user.role !== "student" && <ChatAssistant />}
+
         </div>
     )
 }

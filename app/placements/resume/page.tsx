@@ -95,10 +95,10 @@ export default function ResumeAnalysisPage() {
 
                 </div>
 
-                {/* Right: Chatbot */}
+                {/* Right: Chatbot
                 <div className="h-full min-h-[500px]">
                     <PlacementsChatbot initialMode="resume" />
-                </div>
+                </div> */}
             </div>
         </div>
     )

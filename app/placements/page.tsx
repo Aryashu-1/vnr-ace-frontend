@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation"
 import { StatCard } from "@/components/stat-card"
-import { Briefcase, TrendingUp, FileText, Building2, Zap, Code } from "lucide-react"
+import { Briefcase, TrendingUp, FileText, Building2, Zap, Code, Loader2 } from "lucide-react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
+import { useAuth } from "@/components/auth-provider"
+import { SignInPrompt } from "@/components/sign-in-prompt"
 
 export default function PlacementsPage() {
   const router = useRouter()
+  const { user, isLoading } = useAuth()
 
   const prepCards = [
     {
@@ -51,6 +54,35 @@ export default function PlacementsPage() {
     },
   ]
 
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  if (!user || user.role === "guest") {
+    return <SignInPrompt moduleName="Placements" />
+  }
+
+  // Filter cards based on role
+  const visibleCards = prepCards.filter(card => {
+    // Student: Hide Shortlisting Info
+    if (user.role === 'student' && card.title === "Shortlisting Info") {
+      return false
+    }
+
+    // Faculty: Show ONLY Placement Tracking
+    if (user.role === 'faculty' && card.title !== "Placement Tracking") {
+      return false
+    }
+
+    // Placement Officer & Admin: Show All (No filtering needed)
+
+    return true
+  })
+
   return (
     <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
       <div>
@@ -69,7 +101,7 @@ export default function PlacementsPage() {
           <div className="mt-8">
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {prepCards.map((card) => {
+              {visibleCards.map((card) => {
                 const Icon = card.icon
                 return (
                   <div
@@ -99,9 +131,7 @@ export default function PlacementsPage() {
         </div>
 
         {/* Chatbot Area - Right 1 Column */}
-        <div className="lg:col-span-1 h-full min-h-[500px]">
-          <PlacementsChatbot />
-        </div>
+
       </div>
     </div>
   )
