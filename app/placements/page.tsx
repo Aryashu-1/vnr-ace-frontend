@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { StatCard } from "@/components/stat-card"
-import { Briefcase, TrendingUp, FileText, Building2, Zap, Code, Loader2 } from "lucide-react"
+import { Briefcase, TrendingUp, FileText, Building2, Zap, Code, Loader2, PieChart } from "lucide-react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { useAuth } from "@/components/auth-provider"
 import { SignInPrompt } from "@/components/sign-in-prompt"
@@ -52,6 +52,16 @@ export default function PlacementsPage() {
       button: "Check Status",
       link: "/placements/shortlisting",
     },
+    {
+      id: 5,
+      title: "Placement Analytics Dashboard",
+      description: "View overall placement statistics, salary trends, and detailed insights",
+      icon: PieChart,
+      color: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+      button: "View Dashboard",
+      link: "/dashboard/placements",
+    },
   ]
 
   if (isLoading) {
@@ -73,8 +83,8 @@ export default function PlacementsPage() {
       return false
     }
 
-    // Faculty: Show ONLY Placement Tracking
-    if (user.role === 'faculty' && card.title !== "Placement Tracking") {
+    // Faculty: Show ONLY Placement Tracking and Analytics
+    if (user.role === 'faculty' && !(card.title === "Placement Tracking" || card.title === "Placement Analytics Dashboard")) {
       return false
     }
 

@@ -1,0 +1,37 @@
+
+> my-v0-project@0.1.0 build
+> next build
+
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.0s
+   Skipping validation of types
+   Collecting page data using 21 workers ...
+   Generating static pages using 21 workers (0/15) ...
+   Generating static pages using 21 workers (3/15) 
+   Generating static pages using 21 workers (7/15) 
+   Generating static pages using 21 workers (11/15) 
+ ✓ Generating static pages using 21 workers (15/15) in 1340.7ms
+   Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admissions
+├ ○ /classwork
+├ ○ /dashboard/placements
+├ ○ /login
+├ ○ /placements
+├ ○ /placements/dashboard
+├ ○ /placements/prep
+├ ○ /placements/resume
+├ ○ /placements/shortlisting
+├ ○ /profile
+└ ○ /reports
+
+
+○  (Static)  prerendered as static content
+
