@@ -62,6 +62,16 @@ export default function PlacementsPage() {
       button: "View Dashboard",
       link: "/dashboard/placements",
     },
+    {
+      id: 6,
+      title: "Application Portal",
+      description: "View and apply to current job openings, track application status",
+      icon: Briefcase,
+      color: "bg-teal-100",
+      iconColor: "text-teal-600",
+      button: "Browse Jobs",
+      link: "/placements/application-portal",
+    },
   ]
 
   if (isLoading) {
@@ -78,8 +88,8 @@ export default function PlacementsPage() {
 
   // Filter cards based on role
   const visibleCards = prepCards.filter(card => {
-    // Student: Hide Shortlisting Info
-    if (user.role === 'student' && card.title === "Shortlisting Info") {
+    // Student: Hide Shortlisting Info and Placement Analytics Dashboard
+    if (user.role === 'student' && (card.title === "Shortlisting Info" || card.title === "Placement Analytics Dashboard")) {
       return false
     }
 
