@@ -35,6 +35,8 @@ export function PlacementChart({
                         <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
+                            itemStyle={{ color: '#f8fafc' }}
+                            labelStyle={{ color: '#f8fafc' }}
                         />
                         <Legend />
                         <Line type="monotone" dataKey={dataKey} stroke={colors[0]} strokeWidth={3} dot={{ r: 4, fill: colors[0] }} activeDot={{ r: 6 }} />
@@ -48,6 +50,8 @@ export function PlacementChart({
                         <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
+                            itemStyle={{ color: '#f8fafc' }}
+                            labelStyle={{ color: '#f8fafc' }}
                             cursor={{ fill: 'rgba(15, 23, 42, 0.05)' }}
                         />
                         <Legend />
@@ -66,7 +70,7 @@ export function PlacementChart({
                             paddingAngle={5}
                             dataKey={dataKey}
                             nameKey={nameKey}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                             labelLine={false}
                         >
                             {data.map((entry, index) => (
@@ -75,6 +79,8 @@ export function PlacementChart({
                         </Pie>
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
+                            itemStyle={{ color: '#f8fafc' }}
+                            labelStyle={{ color: '#f8fafc' }}
                         />
                         <Legend verticalAlign="bottom" height={36} />
                     </PieChart>

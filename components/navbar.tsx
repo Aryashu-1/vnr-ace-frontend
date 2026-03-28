@@ -3,14 +3,16 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth-provider"
-import { LogOut, User, Settings } from "lucide-react"
+import { LogOut, User, Settings, Menu } from "lucide-react"
 import type { User as UserType } from "@/lib/auth"
 
 interface NavbarProps {
   user: UserType
+  isSidebarOpen?: boolean
+  toggleSidebar?: () => void
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, isSidebarOpen = true, toggleSidebar }: NavbarProps) {
   const { logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -28,7 +30,19 @@ export function Navbar({ user }: NavbarProps) {
 
   if (user.role === "guest") {
     return (
-      <div className="fixed top-0 left-64 right-0 h-16 bg-white/80 backdrop-blur border-b border-gray-200 flex items-center justify-end px-6 z-40 transition-smooth">
+      <div className={`fixed top-0 right-0 h-16 bg-white/80 backdrop-blur border-b border-gray-200 flex items-center justify-between px-6 z-40 transition-all duration-300 left-0`}>
+        <div className="flex items-center gap-4">
+            {toggleSidebar && (
+                <button 
+                  onClick={toggleSidebar}
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+            )}
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">VNR-ACE</h1>
+        </div>
+        
         <Link
           href="/login"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
@@ -40,7 +54,22 @@ export function Navbar({ user }: NavbarProps) {
   }
 
   return (
-    <div className="fixed top-0 left-64 right-0 h-16 bg-white/80 backdrop-blur border-b border-gray-200 flex items-center justify-end px-6 z-40 transition-smooth">
+    <div className={`fixed top-0 right-0 h-16 bg-white/80 backdrop-blur border-b border-gray-200 flex items-center justify-between px-6 z-30 transition-all duration-300 left-0`}>
+      
+      {/* Left side items in Navbar */}
+      <div className="flex items-center gap-4">
+         {toggleSidebar && (
+             <button 
+               onClick={toggleSidebar}
+               className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               aria-label="Toggle sidebar"
+             >
+               <Menu className="w-5 h-5" />
+             </button>
+         )}
+         <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">VNR-ACE</h1>
+      </div>
+
       {/* Profile Dropdown */}
       <div className="relative" ref={dropdownRef}>
         <button

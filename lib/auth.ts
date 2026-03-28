@@ -72,32 +72,62 @@ export function getUser(id: string): User | null {
 }
 
 export function canAccessRoute(userRole: UserRole, route: string): boolean {
+  // Public routes
+  if (route === "/login" || route === "/") return true
+
   const accessRules: Record<UserRole, string[]> = {
-    student: ["/dashboard", "/dashboard/admissions"],
+    guest: ["/admissions", "/dashboard/placements"],
+    student: ["/admissions", "/classwork", "/placements", "/dashboard", "/profile", "/timetable"],
     faculty: [
+      "/admissions",
+      "/classwork",
+      "/placements",
       "/dashboard",
-      "/dashboard/admissions",
-      "/dashboard/classwork",
-      "/dashboard/placements",
-      "/dashboard/reports",
+      "/profile",
+      "/mail",
+      "/timetable",
+    ],
+    placement_officer: [
+      "/admissions",
+      "/classwork",
+      "/placements",
+      "/reports",
+      "/dashboard",
+      "/profile",
     ],
     admin: [
+      "/admissions",
+      "/classwork",
+      "/placements",
+      "/reports",
+      "/admin",
       "/dashboard",
-      "/dashboard/admissions",
-      "/dashboard/classwork",
-      "/dashboard/placements",
-      "/dashboard/reports",
-      "/dashboard/admin",
-    ],
-    guest: ["/dashboard/admissions"],
-    placement_officer: [
-      "/dashboard",
-      "/dashboard/admissions",
-      "/dashboard/classwork",
-      "/dashboard/placements",
-      "/dashboard/reports",
+      "/profile",
+      "/mail",
+      "/timetable",
     ],
   }
 
-  return accessRules[userRole]?.some((allowedRoute) => route.startsWith(allowedRoute)) || false
+  // Check if any allowed route prefix matches the current route
+  return accessRules[userRole]?.some((allowedRoute) => 
+    route === allowedRoute || route.startsWith(allowedRoute + "/")
+  ) || false
+}
+
+export function isKnownRoute(route: string): boolean {
+  if (route === "/" || route === "/login") return true
+
+  const knownRoutes = [
+    "/dashboard",
+    "/admissions",
+    "/classwork",
+    "/placements",
+    "/reports",
+    "/admin",
+    "/profile",
+    "/mail",
+    "/timetable",
+  ]
+
+  return knownRoutes.some((known) => route === known || route.startsWith(known + "/"))
 }

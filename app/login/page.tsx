@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Loader2, User, Key, ArrowRight } from "lucide-react"
+import { Loader2, User, Key, ArrowRight, Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { login } = useAuth()
@@ -21,9 +22,29 @@ export default function LoginPage() {
         setIsSubmitting(true)
 
         try {
-            const success = await login(username, password)
-            if (success) {
-                router.push(redirect)
+            const user = await login(username, password)
+            if (user) {
+                // If a specific redirect is requested via URL, respect it
+                if (searchParams.get("redirect")) {
+                    router.push(searchParams.get("redirect")!)
+                    return
+                }
+
+                // Otherwise, redirect based on role
+                switch (user.role) {
+                    case "faculty":
+                        router.push("/classwork")
+                        break
+                    case "placement_officer":
+                    case "student":
+                        router.push("/placements")
+                        break
+                    case "admin":
+                        router.push("/admin")
+                        break
+                    default:
+                        router.push("/dashboard")
+                }
             } else {
                 setError("Invalid credentials. Try 'student', 'faculty', or 'admin'.")
             }
@@ -73,17 +94,29 @@ export default function LoginPage() {
                             <label htmlFor="password" className="text-sm font-medium text-slate-300">
                                 Password
                             </label>
-                            <div className="relative">
+                            <div className="relative flex items-center">
                                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                 <input
                                     id="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-10 pr-12 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-5 h-5" />
+                                    ) : (
+                                        <Eye className="w-5 h-5" />
+                                    )}
+                                </button>
                             </div>
                         </div>
 

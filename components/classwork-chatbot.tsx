@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, GraduationCap } from "lucide-react"
-import { API_BASE_URL, getToken } from "@/lib/api"
+import { API_BASE_URL, getToken, sendFacultyEnquiry, sendEmailAutomation, sendReportGeneration } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
 
 interface Message {
@@ -37,50 +37,14 @@ export function ClassworkChatbot() {
     // Backend-connected function
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
-            // Determine endpoint based on role
-            const endpoint = user?.role === 'student' ? '/classwork/student/chat' : '/classwork/chat'
             const token = getToken()
-
-            // Call Chat Endpoint
-            const timestamp = new Date().getTime()
-            const chatRes = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                },
-                body: JSON.stringify({ message: userInput }),
-                cache: "no-store", // Prevent Next.js from caching
-            })
-
-            if (!chatRes.ok) {
-                const err = await chatRes.text()
-                console.error("Chat error:", chatRes.status, err)
-                return `Server error (${chatRes.status}): ${err || "Unable to respond. Please check if the backend is running."}`
-            }
-
-            const data = await chatRes.json()
-            console.log("API Response:", data) // Debug log
-
-            // Handle different response formats
-            if (data.reply) {
-                return data.reply
-            } else if (data.response) {
-                return data.response
-            } else if (data.message) {
-                return data.message
-            } else if (typeof data === "string") {
-                return data
-            } else {
-                console.warn("Unexpected response format:", data)
-                return JSON.stringify(data, null, 2)
-            }
+            // Using the new Faculty Enquiry Agent as the primary academic assistant
+            const data = await sendFacultyEnquiry(userInput);
+            
+            return data.reply || "No reply received."
         } catch (error) {
             console.error("Network error:", error)
-            return `Could not reach backend at ${API_BASE_URL}. Error: ${error instanceof Error ? error.message : "Unknown error"}`
+            return `Could not reach backend. Error: ${error instanceof Error ? error.message : "Unknown error"}`
         }
     }
 

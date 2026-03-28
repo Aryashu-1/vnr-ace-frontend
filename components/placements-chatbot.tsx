@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, LayoutDashboard, FileText, CheckCircle, TrendingUp, Zap, Building2, Code } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, sendLiveDashboard, sendResumeFeedback, sendShortlistingAgent, sendChartGenerator, AgentResponse } from "@/lib/api"
 
 interface Message {
     id: string
@@ -23,6 +23,7 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [activeMode, setActiveMode] = useState<GraphType | "general">("general")
+    const [memory, setMemory] = useState<any[]>([])
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Initialize mode/welcome message
@@ -41,6 +42,19 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
         }
     }, [initialMode])
 
+    // Watch for new context injection (e.g. starting company prep)
+    useEffect(() => {
+        if (context && context.type === "COMPANY_PREP") {
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                role: "assistant",
+                content: `Loaded **${context.company}** preparation context! I have reviewed the previous year questions and interview experiences. Shall we start with a mock interview question or do you want me to explain any specific PYQ?`
+            }]);
+            setActiveMode("prep");
+        }
+    }, [context]);
+
+
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -53,27 +67,31 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
     // Backend connection
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
-            // Mock Auth Logic (Same as before)
-            let token = "mock-token"
+            let response: AgentResponse;
 
-            // Determine endpoint based on active mode
-            // If mode is 'general', we default to 'dashboard' or a supervisor if needed. 
-            // For now, let's map 'general' -> 'dashboard' or just error.
-            // Let's assume 'dashboard' is the default catch-all if in general mode.
-            const targetGraph = activeMode === "general" ? "dashboard" : activeMode
-            const chatRes = await fetch(`${API_BASE_URL}/placements/chat/${targetGraph}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message: userInput, context }),
-            })
+            switch (activeMode) {
+                case "resume":
+                    response = await sendResumeFeedback({
+                        message: userInput,
+                        resume_text: context.resume_text || "", // From context if available
+                        memory: memory
+                    });
+                    break;
+                case "shortlisting":
+                    response = await sendShortlistingAgent(userInput, context.jd_text || "");
+                    break;
+                case "dashboard":
+                default:
+                    // Default to Live Dashboard for general queries or dashboard mode
+                    response = await sendLiveDashboard(userInput, memory);
+                    break;
+            }
 
-            if (!chatRes.ok) throw new Error("Chat request failed")
+            if (response.memory) {
+                setMemory(response.memory);
+            }
 
-            const data = await chatRes.json()
-            return data.reply || "No reply received."
+            return response.reply || "No reply received."
         } catch (error) {
             console.error("Error:", error)
             return "Sorry, I encountered a connection error."
@@ -120,13 +138,14 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
     }
 
     // Quick Actions / Mode Switchers
-    const quickActions = [
+    const quickActions: { label: string, icon: any, mode: GraphType }[] = [
         // { label: "Dashboard", icon: LayoutDashboard, mode: "dashboard" as GraphType },
         // { label: "Resume", icon: FileText, mode: "resume" as GraphType },
-        { label: "Prep", icon: Zap, mode: "prep" as GraphType },
+        // { label: "Prep", icon: Zap, mode: "prep" as GraphType },
         // { label: "Shortlisting", icon: CheckCircle, mode: "shortlisting" as GraphType },
         // { label: "Tracking", icon: TrendingUp, mode: "tracking" as GraphType },
     ]
+
 
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full flex flex-col">

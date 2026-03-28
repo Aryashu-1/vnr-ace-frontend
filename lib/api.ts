@@ -111,3 +111,65 @@ export const getPredictionUnplacedRisk = () => fetchGet("/predictions/unplaced-r
 export const getExportStudentsUrl = () => `${PLACEMENT_BASE}/export/students`;
 export const getExportDashboardUrl = () => `${PLACEMENT_BASE}/export/dashboard`;
 
+// --- NEW LANGGRAPH AGENT API METHODS ---
+
+export interface AgentResponse {
+    reply: string;
+    state?: any;
+    memory?: any[];
+    chart_path?: string;
+    approval_required?: boolean;
+    waiting_for_human?: boolean;
+}
+
+// Classwork Agents
+export const sendEmailAutomation = (message: string, approval?: string) =>
+    fetchFromApi("/classwork/email-automation", {
+        method: "POST",
+        body: JSON.stringify({ message, approval }),
+    });
+
+export const sendFacultyEnquiry = (message: string) =>
+    fetchFromApi("/classwork/faculty-enquiry", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+    });
+
+export const sendReportGeneration = (message: string) =>
+    fetchFromApi("/classwork/report-generation", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+    });
+
+// Placements Agents
+export const sendChartGenerator = (message: string, memory: any[] = []) =>
+    fetchFromApi("/placements/chart-generator", {
+        method: "POST",
+        body: JSON.stringify({ message, memory }),
+    });
+
+export const sendLiveDashboard = (message: string, memory: any[] = []) =>
+    fetchFromApi("/placements/live-dashboard", {
+        method: "POST",
+        body: JSON.stringify({ message, memory }),
+    });
+
+export interface ResumeFeedbackRequest {
+    message: string;
+    resume_text: string;
+    resume_id?: string;
+    memory?: any[];
+}
+
+export const sendResumeFeedback = (payload: ResumeFeedbackRequest) =>
+    fetchFromApi("/placements/resume-feedback", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+
+export const sendShortlistingAgent = (message: string, jd_text: string) =>
+    fetchFromApi("/placements/shortlisting-agent", {
+        method: "POST",
+        body: JSON.stringify({ message, jd_text }),
+    });
+

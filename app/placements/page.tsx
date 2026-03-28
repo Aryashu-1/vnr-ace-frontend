@@ -88,8 +88,8 @@ export default function PlacementsPage() {
 
   // Filter cards based on role
   const visibleCards = prepCards.filter(card => {
-    // Student: Hide Shortlisting Info and Placement Analytics Dashboard
-    if (user.role === 'student' && (card.title === "Shortlisting Info" || card.title === "Placement Analytics Dashboard")) {
+    // Student: Hide Shortlisting Info
+    if (user.role === 'student' && card.title === "Shortlisting Info") {
       return false
     }
 

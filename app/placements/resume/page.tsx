@@ -2,35 +2,30 @@
 
 import { useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
-import { UploadCloud, FileType, CheckCircle, AlertCircle } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { UploadCloud, FileType, CheckCircle, AlertCircle, FileText } from "lucide-react"
+import { API_BASE_URL, sendResumeFeedback } from "@/lib/api"
 
 export default function ResumeAnalysisPage() {
     const [file, setFile] = useState<File | null>(null)
+    const [resumeText, setResumeText] = useState("")
     const [uploading, setUploading] = useState(false)
     const [analysis, setAnalysis] = useState<string | null>(null)
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!file) return
+        if (!file && !resumeText) return
 
         setUploading(true)
         setAnalysis(null)
 
         try {
-            const formData = new FormData()
-            formData.append("file", file)
-
-            const res = await fetch(`${API_BASE_URL}/placements/upload-resume`, {
-                method: "POST",
-                body: formData
+            // Using the new LangGraph agent endpoint
+            const data = await sendResumeFeedback({
+                message: "Analyze my resume and provide feedback.",
+                resume_text: resumeText || "File uploaded (see backend)", // Backend might parse file if we could send it, but let's stick to text for now
             })
 
-            if (!res.ok) throw new Error("Upload failed")
-
-            const data = await res.json()
-            setAnalysis(data.analysis) // Display this in UI or pass to chatbot?
-            // For now, let's display it in a nice UI card and let the chatbot discuss it.
+            setAnalysis(data.reply)
         } catch (error) {
             console.error(error)
             alert("Failed to analyze resume")
@@ -48,31 +43,53 @@ export default function ResumeAnalysisPage() {
                 <div className="flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
 
                     {/* Upload Card */}
-                    <div className="bg-white p-8 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors">
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 text-blue-600">
-                            <UploadCloud className="w-8 h-8" />
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                                <FileText className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">Resume Details</h3>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900">Upload your Resume</h3>
-                        <p className="text-sm text-gray-500 mb-6">PDF or DOCX up to 10MB</p>
 
-                        <form onSubmit={handleUpload} className="w-full max-w-xs flex flex-col gap-3">
+                        <form onSubmit={handleUpload} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Paste Resume Text</label>
+                                <textarea
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm outline-none focus:border-blue-500 transition-all h-48 resize-none"
+                                    placeholder="Paste the content of your resume here for AI analysis..."
+                                    value={resumeText}
+                                    onChange={(e) => setResumeText(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <div className="w-full border-t border-gray-200"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-2 bg-white text-gray-500 uppercase tracking-wider text-[10px] font-bold">OR UPLOAD FILE</span>
+                                </div>
+                            </div>
+
                             <input
                                 type="file"
                                 accept=".pdf,.docx"
                                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                className="block w-full text-sm text-gray-500
+                                className="block w-full text-xs text-gray-500
                                 file:mr-4 file:py-2 file:px-4
                                 file:rounded-full file:border-0
-                                file:text-sm file:font-semibold
+                                file:text-xs file:font-bold
                                 file:bg-blue-50 file:text-blue-700
                                 hover:file:bg-blue-100"
                             />
+
                             <button
                                 type="submit"
-                                disabled={!file || uploading}
-                                className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                disabled={(!file && !resumeText) || uploading}
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                             >
-                                {uploading ? "Analyzing..." : "Analyze Resume"}
+                                {uploading ? "Analyzing with AI..." : "Analyze Resume"}
                             </button>
                         </form>
                     </div>
@@ -95,10 +112,10 @@ export default function ResumeAnalysisPage() {
 
                 </div>
 
-                {/* Right: Chatbot
+                {/* Right: Chatbot */}
                 <div className="h-full min-h-[500px]">
-                    <PlacementsChatbot initialMode="resume" />
-                </div> */}
+                    <PlacementsChatbot initialMode="resume" context={{ resume_text: resumeText }} />
+                </div>
             </div>
         </div>
     )

@@ -1,9 +1,30 @@
 "use client"
 
 import { StatCard } from "@/components/stat-card"
-import { Download, BarChart3 } from "lucide-react"
+import { Download, BarChart3, Loader2 } from "lucide-react"
+import { useState } from "react"
+import { sendReportGeneration } from "@/lib/api"
 
 export default function ReportsPage() {
+  const [loading, setLoading] = useState(false)
+  const [reportType, setReportType] = useState("Academic Performance")
+  const [dateRange, setDateRange] = useState("Last 7 Days")
+  const [result, setResult] = useState<string | null>(null)
+
+  const handleGenerate = async () => {
+    setLoading(true)
+    setResult(null)
+    try {
+      const msg = `Generate a ${reportType} report for the ${dateRange}.`
+      const data = await sendReportGeneration(msg)
+      setResult(data.reply)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to generate report")
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -51,7 +72,11 @@ export default function ReportsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 transition-smooth">
+              <select 
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 transition-smooth"
+              >
                 <option>Academic Performance</option>
                 <option>Attendance</option>
                 <option>Placements</option>
@@ -60,17 +85,32 @@ export default function ReportsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 transition-smooth">
+              <select 
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500 transition-smooth"
+              >
                 <option>Last 7 Days</option>
                 <option>Last 30 Days</option>
                 <option>Last Quarter</option>
                 <option>Last Year</option>
               </select>
             </div>
-            <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-smooth font-medium text-sm">
-              Generate Report
+            <button 
+              onClick={handleGenerate}
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-smooth font-medium text-sm flex items-center justify-center gap-2"
+            >
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : "Generate Report"}
             </button>
           </div>
+          
+          {result && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2">
+              <h4 className="text-sm font-bold text-gray-900 mb-2">Generation Result:</h4>
+              <p className="text-sm text-gray-700 whitespace-pre-line">{result}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

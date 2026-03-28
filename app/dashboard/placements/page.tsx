@@ -14,6 +14,7 @@ import { AIChartGenerator } from "@/components/AIChartGenerator"
 import { PredictionPanel } from "@/components/PredictionPanel"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/components/auth-provider"
 
 import {
     getStats, getPlacementTrend, getBranchWise,
@@ -22,6 +23,8 @@ import {
 } from "@/lib/api"
 
 export default function PlacementsDashboard() {
+    const { user } = useAuth()
+    const isGuest = !user || user.role === "guest"
     const [stats, setStats] = useState<any>(null)
     const [charts, setCharts] = useState<any>({
         trend: null, branch: null, salary: null,
@@ -78,6 +81,8 @@ export default function PlacementsDashboard() {
         window.open(`${url}?format=${type}`, '_blank')
     }
 
+    const isStaff = user?.role === "admin" || user?.role === "placement_officer"
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 pb-12">
             {/* Header */}
@@ -91,27 +96,29 @@ export default function PlacementsDashboard() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                <Download className="w-4 h-4" />
-                                Export
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                            <DropdownMenuItem onClick={() => handleExport('csv')} className="gap-2 cursor-pointer">
-                                <FileText className="w-4 h-4 text-slate-500" /> Export CSV (Students)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExport('excel')} className="gap-2 cursor-pointer">
-                                <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Export Excel
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExport('pdf')} className="gap-2 cursor-pointer">
-                                <Download className="w-4 h-4 text-rose-500" /> Export PDF Dashboard
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                {isStaff && (
+                    <div className="flex items-center gap-3">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                    <Download className="w-4 h-4" />
+                                    Export
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                <DropdownMenuItem onClick={() => handleExport('csv')} className="gap-2 cursor-pointer">
+                                    <FileText className="w-4 h-4 text-slate-500" /> Export CSV (Students)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('excel')} className="gap-2 cursor-pointer">
+                                    <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Export Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('pdf')} className="gap-2 cursor-pointer">
+                                    <Download className="w-4 h-4 text-rose-500" /> Export PDF Dashboard
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
             </div>
 
             <div className="p-6 max-w-7xl mx-auto space-y-8 mt-4">
@@ -129,10 +136,12 @@ export default function PlacementsDashboard() {
                 )}
 
                 {/* AI & Prediction Panels */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <AIChartGenerator />
-                    <PredictionPanel />
-                </div>
+                {!isGuest && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <AIChartGenerator />
+                        <PredictionPanel />
+                    </div>
+                )}
 
                 {/* Charts Section */}
                 <div className="space-y-6">
@@ -154,14 +163,16 @@ export default function PlacementsDashboard() {
                 </div>
 
                 {/* Student Table */}
-                <div className="space-y-6 pt-4">
-                    <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                        <Users className="w-5 h-5 text-indigo-500" /> Student Directory
-                    </h2>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-                        <StudentTable />
-                    </motion.div>
-                </div>
+                {isStaff && (
+                    <div className="space-y-6 pt-4">
+                        <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                            <Users className="w-5 h-5 text-indigo-500" /> Student Directory
+                        </h2>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+                            <StudentTable />
+                        </motion.div>
+                    </div>
+                )}
 
             </div>
         </div>

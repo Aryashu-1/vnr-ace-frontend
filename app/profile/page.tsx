@@ -36,29 +36,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
         <p className="text-gray-600 mt-1">Manage your account and personal information</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Profile Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
+      <div className="space-y-6">
+        {/* Profile Header - Flat Design No Border/Shadow on container strictly */}
+        <div className="py-4">
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border-4 border-white/30">
+            <div className="w-24 h-24 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-3xl font-bold border-4 border-blue-200">
               {user.avatar}
             </div>
             <div>
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <p className="text-blue-100 capitalize">{user.role}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+              <p className="text-gray-600 capitalize">{user.role}</p>
               {user.studentId && (
-                <p className="text-blue-50 text-sm mt-1 flex items-center gap-1.5 opacity-90">
+                <p className="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
                   <Hash className="w-4 h-4" /> ID: {user.studentId}
                 </p>
               )}
               {user.designation && (
-                <p className="text-blue-50 text-sm mt-1 flex items-center gap-1.5 opacity-90">
+                <p className="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
                   <BriefcaseIcon className="w-4 h-4" /> {user.designation}
                 </p>
               )}
@@ -67,9 +67,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Details */}
-        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Contact Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
             <div className="space-y-4">
               <div className="flex items-start gap-3 text-gray-600">
                 <Mail className="w-5 h-5 mt-0.5 text-gray-400" />
@@ -91,7 +91,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Academic Details</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Academic Details</h3>
             <div className="space-y-4">
               {user.department && (
                 <div className="flex items-start gap-3 text-gray-600">
@@ -124,11 +124,13 @@ export default function ProfilePage() {
           </div>
         </div>
 
+
+
         {/* Actions */}
-        <div className="bg-gray-50 px-8 py-6 border-t border-gray-100 flex justify-end">
+        <div className="pt-8 mt-8 border-t border-gray-200 flex justify-end">
           <button
             onClick={logout}
-            className="px-6 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors font-medium shadow-sm"
+            className="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium shadow-sm transition-all duration-200"
           >
             Sign Out
           </button>

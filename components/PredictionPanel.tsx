@@ -6,8 +6,11 @@ import { motion } from "framer-motion"
 import { TrendingUp, AlertTriangle, Briefcase, Zap } from "lucide-react"
 import { getPredictionPlacementPercentage, getPredictionSalaryTrends, getPredictionUnplacedRisk } from "@/lib/api"
 import { PlacementChart } from "./PlacementChart"
+import { useAuth } from "@/components/auth-provider"
 
 export function PredictionPanel() {
+    const { user } = useAuth()
+    const isStaff = user?.role === "admin" || user?.role === "placement_officer"
     const [data, setData] = useState<any>({
         percentage: null,
         salaryTrends: null,
@@ -103,7 +106,7 @@ export function PredictionPanel() {
                 )}
 
                 {/* Risk Alerts */}
-                {data.unplacedRisk && data.unplacedRisk.length > 0 && (
+                {isStaff && data.unplacedRisk && data.unplacedRisk.length > 0 && (
                     <div className="space-y-3">
                         <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-500" />

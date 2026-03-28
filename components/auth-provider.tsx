@@ -9,7 +9,7 @@ import * as api from "@/lib/api"
 
 interface AuthContextType {
     user: User | null
-    login: (username: string, password?: string) => Promise<boolean>
+    login: (username: string, password?: string) => Promise<User | null>
     logout: () => void
     isLoading: boolean
 }
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
     }, [])
 
-    const login = async (username: string, password?: string): Promise<boolean> => {
+    const login = async (username: string, password?: string): Promise<User | null> => {
         setIsLoading(true)
 
         try {
@@ -75,14 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 api.setToken(data.access_token)
                 localStorage.setItem("vnr_ace_user", JSON.stringify(authenticatedUser))
                 setIsLoading(false)
-                return true
+                return authenticatedUser
             }
         } catch (error) {
             console.error("Login error:", error)
         }
 
         setIsLoading(false)
-        return false
+        return null
     }
 
     const logout = () => {

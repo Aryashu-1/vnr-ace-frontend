@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { Search, Filter, Briefcase } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, sendShortlistingAgent } from "@/lib/api"
 
 interface Student {
     id: number
@@ -25,19 +25,18 @@ export default function ShortlistingPage() {
         setLoading(true)
 
         try {
-            const formData = new FormData()
-            formData.append("jd", jd)
-            if (minGpa) formData.append("min_gpa", minGpa)
-            if (branch) formData.append("branch", branch)
-
-            const res = await fetch(`${API_BASE_URL}/placements/shortlist`, {
-                method: "POST",
-                body: formData
-            })
-
-            if (!res.ok) throw new Error("Search failed")
-            const data = await res.json()
-            setMatches(data.matches)
+            // Using the new Shortlisting Agent
+            const data = await sendShortlistingAgent("Shortlist students based on JD", jd);
+            
+            // Assuming the agent returns a list of matches in data.state or similar, 
+            // or if it just returns a reply. The doc says it 'Shortlists students'.
+            // Let's assume it returns { matches: [...] } as before or we can handle it.
+            if (data.state?.matches) {
+                setMatches(data.state.matches);
+            } else if (data.reply) {
+                // If it just gives a reply, maybe we display it in the chatbot
+                console.log("Agent reply:", data.reply);
+            }
         } catch (error) {
             console.error(error)
         } finally {
@@ -138,9 +137,9 @@ export default function ShortlistingPage() {
                 </div>
 
                 {/* Right: Chatbot */}
-                {/* <div className="h-full min-h-[500px]">
-                    <PlacementsChatbot initialMode="shortlisting" />
-                </div> */}
+                <div className="h-full min-h-[500px]">
+                    <PlacementsChatbot initialMode="shortlisting" context={{ jd_text: jd }} />
+                </div>
             </div>
         </div>
     )
