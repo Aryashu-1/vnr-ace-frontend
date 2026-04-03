@@ -15,16 +15,49 @@ export function AIChartGenerator() {
     const [chartData, setChartData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
 
+    const CHART_CONFIGS: Record<string, { title: string, type: 'line' | 'bar' | 'pie', color: string, xAxisKey?: string, dataKey?: string, nameKey?: string }> = {
+        "placement-trend": { title: "Placement Trend Over Years", type: "line", color: "#6366F1", xAxisKey: "year", dataKey: "count" },
+        "branch-wise": { title: "Branch-wise Placements", type: "bar", color: "#3B82F6", xAxisKey: "branch", dataKey: "placed" },
+        "salary-distribution": { title: "Salary Distribution (LPA)", type: "bar", color: "#10B981", xAxisKey: "bucket", dataKey: "count" },
+        "company-wise": { title: "Top Hiring Companies", type: "pie", color: "#F59E0B", nameKey: "company", dataKey: "hires" },
+        "minor-degree": { title: "Minor Degree Impact", type: "pie", color: "#EC4899" },
+        "multiple-offers": { title: "Multiple Offers Breakdown", type: "bar", color: "#F59E0B" }
+    }
+
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!query.trim()) return
 
         setLoading(true)
         setError(null)
+        setChartData(null)
 
         try {
             const response = await queryAiVisualization(query)
-            setChartData(response.chart)
+            
+            if (response.chart && response.chart !== "unknown" && CHART_CONFIGS[response.chart]) {
+                const config = CHART_CONFIGS[response.chart]
+                
+                // Handle complex object transformations if necessary (similar to dashboard)
+                let data = response.data;
+                if (response.chart === "minor-degree" && !Array.isArray(data)) {
+                    data = [
+                        { name: "With Minor", value: data.with_minor?.placed || 0 },
+                        { name: "Without Minor", value: data.without_minor?.placed || 0 }
+                    ];
+                } else if (response.chart === "multiple-offers" && !Array.isArray(data)) {
+                    data = [
+                        { name: "Multiple Offers", value: data.students_with_multiple_offers || 0 }
+                    ];
+                }
+
+                setChartData({
+                    ...config,
+                    data: data
+                })
+            } else {
+                setError("I couldn't identify a specific chart for that query. Try asking about salary, branches, or placement trends.")
+            }
         } catch (err) {
             setError("Failed to generate chart. Please try again.")
         } finally {
@@ -73,7 +106,7 @@ export function AIChartGenerator() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="text-sm text-rose-500"
+                            className="text-sm text-rose-500 bg-rose-50 dark:bg-rose-900/20 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30"
                         >
                             {error}
                         </motion.p>
@@ -91,8 +124,7 @@ export function AIChartGenerator() {
                                 title={chartData.title}
                                 type={chartData.type}
                                 data={chartData.data}
-                                dataKey={chartData.dataKey}
-                                colors={['#6366F1']}
+                                colors={[chartData.color]}
                             />
                         </motion.div>
                     )}
@@ -108,9 +140,9 @@ export function AIChartGenerator() {
                             <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-full mb-3">
                                 <Sparkles className="h-6 w-6 text-indigo-500" />
                             </div>
-                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-200">No chart generated</h3>
+                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-200">Ready to Visualize</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-[250px]">
-                                Type a query above to generate an insight instantly.
+                                Try "How many students got more than one offer?" or "Salary distribution by branch".
                             </p>
                         </motion.div>
                     )}

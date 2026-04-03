@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+export const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1`
 
 // Auth helpers
 export const setToken = (token: string) => {
@@ -40,76 +40,80 @@ export async function login(email: string, password: string) {
     return response.json()
 }
 
+// Simplified fetching helper
 export async function fetchFromApi(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`
-    const token = getToken()
+    const token = typeof window !== 'undefined' ? localStorage.getItem("vnr_ace_token") : null
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
 
     const headers: Record<string, string> = {
-        "Content-Type": "application/json",
         ...(options.headers as Record<string, string>),
     }
 
-    if (token) {
-        headers["Authorization"] = `Bearer ${token}`
+    if (!isFormData && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json"
     }
 
-    const response = await fetch(url, {
-        ...options,
-        headers,
-    })
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    const response = await fetch(url, { ...options, headers })
 
     if (!response.ok) {
-        throw new Error(`API call failed: ${response.statusText}`)
+        let message = `API call failed: ${response.status} ${response.statusText}`
+
+        try {
+            const errorData = await response.json()
+            message =
+                errorData?.detail ||
+                errorData?.message ||
+                errorData?.reply ||
+                (Array.isArray(errorData?.detail)
+                    ? errorData.detail.map((item: any) => item?.msg || JSON.stringify(item)).join(", ")
+                    : message)
+        } catch {
+            try {
+                const text = await response.text()
+                if (text) {
+                    message = text
+                }
+            } catch {
+                // Ignore parse failures and keep the default status-based message.
+            }
+        }
+
+        throw new Error(message)
     }
 
     return response.json()
 }
 
-// --- PLACEMENT DASHBOARD API METHODS ---
-// Uses localhost:3000/api as requested by the user
-const PLACEMENT_BASE = "http://localhost:3000/api";
+// --- NEW STANDARDIZED API METHODS ---
 
-async function fetchGet(endpoint: string) {
-    const res = await fetch(`${PLACEMENT_BASE}${endpoint}`);
-    if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
-    return res.json();
-}
-
-async function fetchPost(endpoint: string, body: any) {
-    const res = await fetch(`${PLACEMENT_BASE}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`Failed to POST to ${endpoint}`);
-    return res.json();
-}
-
-export const getStats = () => fetchGet("/placements/stats");
-export const getPlacementTrend = () => fetchGet("/charts/placement-trend");
-export const getBranchWise = () => fetchGet("/charts/branch-wise");
-export const getSalaryDistribution = () => fetchGet("/charts/salary-distribution");
-export const getCompanyWise = () => fetchGet("/charts/company-wise");
-export const getMinorDegree = () => fetchGet("/charts/minor-degree");
-export const getMultipleOffers = () => fetchGet("/charts/multiple-offers");
-
-export const getStudents = (params?: Record<string, string>) => {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return fetchGet(`/students${query}`);
-};
+// Analytics & Charts
+export const getPlacementTrend = () => fetchFromApi("/analytics/placement-trend");
+export const getBranchWise = () => fetchFromApi("/analytics/branch-wise");
+export const getSalaryDistribution = () => fetchFromApi("/analytics/salary-distribution");
+export const getTopHiring = () => fetchFromApi("/analytics/top-hiring");
+export const getMinorImpact = () => fetchFromApi("/analytics/minor-impact");
+export const getMultipleOffers = () => fetchFromApi("/analytics/multiple-offers");
 
 // AI Visualization / Dynamic Charts
-export const queryAiVisualization = (queryStr: string) => {
-    const params = new URLSearchParams({ query: queryStr });
-    return fetchGet(`/charts/dynamic?${params.toString()}`);
+export const queryAiVisualization = (query: string) =>
+    fetchFromApi("/charts/dynamic", {
+        method: "POST",
+        body: JSON.stringify({ query }),
+    });
+
+// Dashboard Stats & Data
+export const getDashboardStats = () => fetchFromApi("/placements/stats");
+export const getStudents = (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : "";
+    return fetchFromApi(`/data/students${query}`);
 };
 
-export const getPredictionPlacementPercentage = () => fetchGet("/predictions/placement-percentage");
-export const getPredictionSalaryTrends = () => fetchGet("/predictions/salary-trends");
-export const getPredictionUnplacedRisk = () => fetchGet("/predictions/unplaced-risk");
-
-export const getExportStudentsUrl = () => `${PLACEMENT_BASE}/export/students`;
-export const getExportDashboardUrl = () => `${PLACEMENT_BASE}/export/dashboard`;
+// Placement Dashboard API Utilities (Legacy/Specific)
+export const getExportStudentsUrl = () => `${API_BASE_URL}/export/students`;
+export const getExportDashboardUrl = () => `${API_BASE_URL}/export/dashboard`;
 
 // --- NEW LANGGRAPH AGENT API METHODS ---
 
@@ -118,9 +122,18 @@ export interface AgentResponse {
     state?: any;
     memory?: any[];
     chart_path?: string;
+    artifact_path?: string;
+    data?: any[];
     approval_required?: boolean;
     waiting_for_human?: boolean;
 }
+
+// Agents
+export const sendAdmissionsChat = (message: string, thread_id?: string) =>
+    fetchFromApi("/agents/admissions", {
+        method: "POST",
+        body: JSON.stringify({ message, thread_id }),
+    });
 
 // Classwork Agents
 export const sendEmailAutomation = (message: string, approval?: string) =>
@@ -137,6 +150,12 @@ export const sendFacultyEnquiry = (message: string) =>
 
 export const sendReportGeneration = (message: string) =>
     fetchFromApi("/classwork/report-generation", {
+        method: "POST",
+        body: JSON.stringify({ message }),
+    });
+
+export const sendBulkDataQuery = (message: string) =>
+    fetchFromApi("/classwork/chat", {
         method: "POST",
         body: JSON.stringify({ message }),
     });
@@ -172,4 +191,48 @@ export const sendShortlistingAgent = (message: string, jd_text: string) =>
         method: "POST",
         body: JSON.stringify({ message, jd_text }),
     });
+
+// --- DIRECT PLACEMENT APIs (Section 6) ---
+
+export const analyzeResumeDirect = (file?: File, resume_text?: string) => {
+    const formData = new FormData();
+    if (file) formData.append("file", file);
+    if (resume_text) formData.append("resume_text", resume_text);
+
+    return fetchFromApi("/placements/resume/analyze", {
+        method: "POST",
+        body: formData,
+    });
+};
+
+export const runShortlistingDirect = (jd_text: string, no_of_students: number = 5, min_cgpa?: number, branch?: string) => {
+    const params = new URLSearchParams();
+    params.append("jd_text", jd_text);
+    params.append("no_of_students", no_of_students.toString());
+    if (min_cgpa) params.append("min_cgpa", min_cgpa.toString());
+    if (branch && branch !== "all") params.append("branch", branch);
+
+    return fetchFromApi("/placements/shortlist/run", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params,
+    });
+};
+
+// Interview Prep Agent
+export const startPrepSession = (company: string, topics?: string[]) =>
+    fetchFromApi("/placements/prep/start", {
+        method: "POST",
+        body: JSON.stringify({ company, topics: topics || [] }),
+    });
+
+export const sendPrepChat = (session_id: string, message: string) =>
+    fetchFromApi("/placements/prep/chat", {
+        method: "POST",
+        body: JSON.stringify({ session_id, message }),
+    });
+
+// AI SQL Engine
 

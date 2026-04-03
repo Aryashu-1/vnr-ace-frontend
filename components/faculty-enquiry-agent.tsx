@@ -1,15 +1,22 @@
 "use client"
 
-import { Search, Send, User, Loader2 } from "lucide-react"
+import { Search, Send, User, Loader2, Code, Terminal } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { sendFacultyEnquiry } from "@/lib/api"
+
+interface Message {
+  role: 'user' | 'ai'
+  content: string
+  sql?: string
+}
 
 export function FacultyEnquiryAgent() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([
+  const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: "Hello! Ask me about any faculty member's current location or schedule." }
   ])
+  const [showSql, setShowSql] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -27,7 +34,11 @@ export function FacultyEnquiryAgent() {
 
     try {
       const data = await sendFacultyEnquiry(userMsg)
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply }])
+      setMessages(prev => [...prev, { 
+        role: 'ai', 
+        content: data.reply,
+        sql: data.metadata?.sql // Capture SQL from metadata if present
+      }])
     } catch (err) {
       setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I couldn't reach the enquiry service." }])
     } finally {
@@ -45,10 +56,29 @@ export function FacultyEnquiryAgent() {
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none'}`}>
+            <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'}`}>
                 {m.content}
               </div>
+              {m.sql && (
+                <div className="mt-1.5 w-full max-w-[85%]">
+                    <button 
+                        onClick={() => setShowSql(showSql === i ? null : i)}
+                        className="text-[10px] font-bold text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-0.5 rounded transition-all"
+                    >
+                        <Code className="w-3 h-3" /> {showSql === i ? "Hide Query" : "View SQL Generated"}
+                    </button>
+                    {showSql === i && (
+                        <div className="mt-1 bg-slate-900 text-slate-300 p-3 rounded-lg text-[10px] font-mono whitespace-pre-wrap border border-slate-700 shadow-inner flex flex-col gap-2 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center gap-1.5 text-slate-500 border-b border-slate-800 pb-1.5 mb-1.5">
+                                <Terminal className="w-3 h-3" />
+                                <span className="uppercase tracking-widest font-bold">Query Execution Trace</span>
+                            </div>
+                            {m.sql}
+                        </div>
+                    )}
+                </div>
+              )}
             </div>
           ))}
           {loading && (
@@ -86,20 +116,11 @@ export function FacultyEnquiryAgent() {
           <h3 className="font-bold text-gray-900 text-sm mb-3">Recent Enquiries</h3>
           <div className="space-y-2">
             {['CSE HOD availability', 'Room 302 schedule', 'Dr. Ram’s cabin'].map(q => (
-              <button key={q} onClick={() => setInput(q)} className="w-full text-left text-xs text-gray-600 p-2 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-all">
+              <button key={q} onClick={() => setInput(q)} className="w-full text-left text-xs text-gray-600 p-2 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-all font-inter">
                 "{q}"
               </button>
             ))}
           </div>
-        </div>
-        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-          <div className="flex items-center gap-2 mb-2 text-purple-700">
-            <User className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Agent Status</span>
-          </div>
-          <p className="text-[10px] text-purple-600 leading-relaxed">
-            LangGraph Faculty Agent is online. It has access to real-time RFID and Timetable logs.
-          </p>
         </div>
       </div>
     </div>

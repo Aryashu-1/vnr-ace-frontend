@@ -1,41 +1,64 @@
 "use client"
 
-import { useState } from "react"
-import { PlacementsChatbot } from "@/components/placements-chatbot"
-import { Search, Filter, Briefcase } from "lucide-react"
-import { API_BASE_URL, sendShortlistingAgent } from "@/lib/api"
+import React, { useState } from "react"
+import { Search, Filter, Briefcase, Users, ChevronDown, ChevronUp, Sparkles } from "lucide-react"
+import { API_BASE_URL, runShortlistingDirect } from "@/lib/api"
 
 interface Student {
-    id: number
-    name: string
-    gpa: number
-    branch: string
-    match: string
+    roll_no: string
+    score: number
+    resume_id: string
+    match_reason?: string
+    matched_chunks?: any[]
+}
+
+function MarkdownText({ text }: { text: string }) {
+    // Split by bold pattern **text**
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    
+    return (
+        <span>
+            {parts.map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={index} className="font-bold text-indigo-700">{part.slice(2, -2)}</strong>;
+                }
+                // Handle newlines within non-bold parts
+                return part.split('\n').map((line, lineIndex, array) => (
+                    <span key={index + '-' + lineIndex}>
+                        {line}
+                        {lineIndex < array.length - 1 && <br />}
+                    </span>
+                ));
+            })}
+        </span>
+    );
 }
 
 export default function ShortlistingPage() {
     const [jd, setJd] = useState("")
     const [minGpa, setMinGpa] = useState("")
     const [branch, setBranch] = useState("all")
+    const [topK, setTopK] = useState("5")
     const [loading, setLoading] = useState(false)
     const [matches, setMatches] = useState<Student[]>([])
+    const [expandedRollNo, setExpandedRollNo] = useState<string | null>(null)
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        setMatches([])
 
         try {
-            // Using the new Shortlisting Agent
-            const data = await sendShortlistingAgent("Shortlist students based on JD", jd);
+            // Using the direct shortlisting API with all filters
+            const data = await runShortlistingDirect(
+                jd, 
+                parseInt(topK), 
+                minGpa ? parseFloat(minGpa) : undefined, 
+                branch
+            );
             
-            // Assuming the agent returns a list of matches in data.state or similar, 
-            // or if it just returns a reply. The doc says it 'Shortlists students'.
-            // Let's assume it returns { matches: [...] } as before or we can handle it.
-            if (data.state?.matches) {
-                setMatches(data.state.matches);
-            } else if (data.reply) {
-                // If it just gives a reply, maybe we display it in the chatbot
-                console.log("Agent reply:", data.reply);
+            if (data.matches) {
+                setMatches(data.matches);
             }
         } catch (error) {
             console.error(error)
@@ -45,12 +68,10 @@ export default function ShortlistingPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col gap-6">
-            <h1 className="text-2xl font-bold text-gray-900">Shortlisting Assistant</h1>
+        <div className="flex flex-col gap-6 pb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Resume Shortlisting</h1>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
-                {/* Left: Search Form & Results */}
-                <div className="flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-6">
 
                     {/* Search Form */}
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -61,7 +82,7 @@ export default function ShortlistingPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
                                 <textarea
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-indigo-500 outline-none h-24 resize-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-indigo-500 outline-none h-40 resize-none"
                                     placeholder="Paste JD here..."
                                     value={jd}
                                     onChange={(e) => setJd(e.target.value)}
@@ -69,7 +90,7 @@ export default function ShortlistingPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Min GPA</label>
                                     <input
@@ -94,6 +115,18 @@ export default function ShortlistingPage() {
                                         <option value="EEE">EEE</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                                        <Users className="w-3.5 h-3.5" /> No. of Students
+                                    </label>
+                                    <input
+                                        type="number" min="1" max="100"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-indigo-500 outline-none"
+                                        placeholder="e.g. 10"
+                                        value={topK}
+                                        onChange={(e) => setTopK(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
                             <button
@@ -115,31 +148,69 @@ export default function ShortlistingPage() {
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-white text-gray-500 border-b">
                                     <tr>
-                                        <th className="px-4 py-2 font-medium">Name</th>
-                                        <th className="px-4 py-2 font-medium">Branch</th>
-                                        <th className="px-4 py-2 font-medium">GPA</th>
-                                        <th className="px-4 py-2 font-medium">Match</th>
+                                        <th className="px-4 py-2 font-medium text-gray-700">Roll No</th>
+                                        <th className="px-4 py-2 font-medium text-gray-700">Resume ID</th>
+                                        <th className="px-4 py-2 font-medium text-gray-700 text-right">Score</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {matches.map((s) => (
-                                        <tr key={s.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-2 text-gray-900">{s.name}</td>
-                                            <td className="px-4 py-2 text-gray-600">{s.branch}</td>
-                                            <td className="px-4 py-2 text-gray-600">{s.gpa}</td>
-                                            <td className="px-4 py-2 font-semibold text-green-600">{s.match}</td>
-                                        </tr>
-                                    ))}
+                                    {matches.map((s, idx) => {
+                                        const isExpanded = expandedRollNo === s.roll_no;
+                                        return (
+                                            <React.Fragment key={idx}>
+                                                <tr 
+                                                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${isExpanded ? 'bg-indigo-50/30' : ''}`}
+                                                    onClick={() => setExpandedRollNo(isExpanded ? null : s.roll_no)}
+                                                >
+                                                    <td className="px-4 py-3 text-gray-900 font-medium">
+                                                        <div className="flex items-center gap-2">
+                                                            {isExpanded ? <ChevronUp className="w-4 h-4 text-indigo-500" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                                            {s.roll_no}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{s.resume_id}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-24 hidden md:block">
+                                                                <div 
+                                                                    className="h-full bg-indigo-500 rounded-full" 
+                                                                    style={{ width: `${s.score * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="font-bold text-indigo-600 tabular-nums">{(s.score * 100).toFixed(1)}%</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {isExpanded && (
+                                                    <tr className="bg-indigo-50/40">
+                                                        <td colSpan={3} className="px-8 py-5 border-t border-indigo-100/50">
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                                                                    <Sparkles className="w-3.5 h-3.5" /> Shortlisting Verdict
+                                                                </div>
+                                                                <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+                                                                    {s.match_reason ? (
+                                                                        <div className="text-sm text-gray-800 leading-relaxed font-medium">
+                                                                            <MarkdownText text={s.match_reason} />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-gray-500 italic">No detailed match reason provided for this profile.</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center justify-start text-[10px] text-gray-400 font-medium px-1">
+                                                                    Source Resume: {s.resume_id}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
                     )}
-                </div>
-
-                {/* Right: Chatbot */}
-                <div className="h-full min-h-[500px]">
-                    <PlacementsChatbot initialMode="shortlisting" context={{ jd_text: jd }} />
-                </div>
             </div>
         </div>
     )

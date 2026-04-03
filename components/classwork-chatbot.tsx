@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Send, GraduationCap } from "lucide-react"
+import { Send, GraduationCap, FileBarChart2 } from "lucide-react"
 import { API_BASE_URL, getToken, sendFacultyEnquiry, sendEmailAutomation, sendReportGeneration } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
 
@@ -19,7 +19,7 @@ export function ClassworkChatbot() {
             id: "1",
             role: "assistant",
             content:
-                "Hello! I'm the Academic Assistant. I can help you analyze student performance, attendance, and exam results. Try asking: 'Show me students with low attendance and high grades'.",
+                "Hello! I'm the Academic Report Agent. I can help you generate analytical reports on student performance, attendance, and exam results. Try asking: 'Generate a report for students with low attendance and high grades'.",
         },
     ])
     const [input, setInput] = useState("")
@@ -38,8 +38,8 @@ export function ClassworkChatbot() {
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
             const token = getToken()
-            // Using the new Faculty Enquiry Agent as the primary academic assistant
-            const data = await sendFacultyEnquiry(userInput);
+            // Using the specialized Report Generation Agent
+            const data = await sendReportGeneration(userInput);
             
             return data.reply || "No reply received."
         } catch (error) {
@@ -80,12 +80,12 @@ export function ClassworkChatbot() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-[600px] flex flex-col">
             {/* Header */}
             <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-purple-600" />
+                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <FileBarChart2 className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                    <h3 className="font-bold text-gray-900 text-lg">Academic NLQ Assistant</h3>
-                    <p className="text-sm text-gray-600">Query student data with natural language</p>
+                    <h3 className="font-bold text-gray-900 text-lg">Academic Report Assistant</h3>
+                    <p className="text-sm text-gray-600">Generate on-demand analytical reports</p>
                 </div>
             </div>
 
@@ -95,8 +95,8 @@ export function ClassworkChatbot() {
                     <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                         <div
                             className={`max-w-[80%] px-4 py-2 rounded-lg text-sm whitespace-pre-wrap ${message.role === "user"
-                                ? "bg-purple-600 text-white rounded-br-none"
-                                : "bg-gray-100 text-gray-900 rounded-bl-none"
+                                ? "bg-indigo-600 text-white rounded-br-none"
+                                : "bg-gray-100 text-gray-900 rounded-bl-none shadow-sm"
                                 }`}
                         >
                             <p>{message.content}</p>
@@ -131,7 +131,7 @@ export function ClassworkChatbot() {
                 <button
                     type="submit"
                     disabled={isLoading || !input.trim()}
-                    className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-smooth"
+                    className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-smooth shadow-sm"
                 >
                     <Send className="w-4 h-4" />
                 </button>

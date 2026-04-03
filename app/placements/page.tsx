@@ -24,12 +24,12 @@ export default function PlacementsPage() {
     },
     {
       id: 2,
-      title: "Company-Specific Prep",
-      description: "Targeted preparation materials and interview questions from specific companies",
+      title: "Interview Prep Agent",
+      description: "AI Interviewer grounded in company-specific data and focus topics",
       icon: Building2,
       color: "bg-purple-100",
       iconColor: "text-purple-600",
-      button: "Start Prep",
+      button: "Start Prep Agent",
       link: "/placements/prep",
     },
     {
@@ -104,15 +104,15 @@ export default function PlacementsPage() {
   })
 
   return (
-    <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Placements Hub</h1>
         <p className="text-gray-600 mt-1">Select a tool to get started</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        {/* Main Content Area - Left 2 Columns */}
-        <div className="lg:col-span-2 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Main Content Area */}
+        <div className="space-y-6">
 
 
 

@@ -3,7 +3,8 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, LayoutDashboard, FileText, CheckCircle, TrendingUp, Zap, Building2, Code } from "lucide-react"
-import { API_BASE_URL, sendLiveDashboard, sendResumeFeedback, sendShortlistingAgent, sendChartGenerator, AgentResponse } from "@/lib/api"
+import { API_BASE_URL, sendLiveDashboard, sendShortlistingAgent, sendChartGenerator, analyzeResumeDirect, AgentResponse, sendPrepChat } from "@/lib/api"
+import { MarkdownText } from "./markdown-text"
 
 interface Message {
     id: string
@@ -16,14 +17,16 @@ type GraphType = "dashboard" | "resume" | "prep" | "shortlisting" | "tracking" |
 interface PlacementsChatbotProps {
     initialMode?: GraphType | null
     context?: Record<string, any>
+    sessionId?: string | null
 }
 
-export function PlacementsChatbot({ initialMode = null, context = {} }: PlacementsChatbotProps) {
+export function PlacementsChatbot({ initialMode = null, context = {}, sessionId = null }: PlacementsChatbotProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [activeMode, setActiveMode] = useState<GraphType | "general">("general")
     const [memory, setMemory] = useState<any[]>([])
+    const initializedSessions = useRef<Set<string>>(new Set())
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Initialize mode/welcome message
@@ -44,15 +47,23 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
 
     // Watch for new context injection (e.g. starting company prep)
     useEffect(() => {
-        if (context && context.type === "COMPANY_PREP") {
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                role: "assistant",
-                content: `Loaded **${context.company}** preparation context! I have reviewed the previous year questions and interview experiences. Shall we start with a mock interview question or do you want me to explain any specific PYQ?`
-            }]);
+        if (context && (context.type === "COMPANY_PREP" || context.type === "INTERVIEW_PREP")) {
             setActiveMode("prep");
+            
+            // If we have a sessionId and a firstMessage, "call the next node" (using silent trigger)
+            if (sessionId && context.firstMessage && !initializedSessions.current.has(sessionId)) {
+                initializedSessions.current.add(sessionId);
+                handleSendMessage(context.firstMessage, true); // Silent = true
+            } else if (!sessionId && !initializedSessions.current.has("none")) {
+                initializedSessions.current.add("none");
+                setMessages(prev => [...prev, {
+                    id: Date.now().toString(),
+                    role: "assistant",
+                    content: `Loaded **${context.company}** preparation context! I'm ready to help you with interview tips and mock questions.`
+                }]);
+            }
         }
-    }, [context]);
+    }, [context, sessionId]);
 
 
 
@@ -67,18 +78,22 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
     // Backend connection
     const generateResponse = async (userInput: string): Promise<string> => {
         try {
-            let response: AgentResponse;
+            let response: any;
 
             switch (activeMode) {
                 case "resume":
-                    response = await sendResumeFeedback({
-                        message: userInput,
-                        resume_text: context.resume_text || "", // From context if available
-                        memory: memory
-                    });
+                    response = await analyzeResumeDirect(undefined, context.resume_text || "");
                     break;
                 case "shortlisting":
                     response = await sendShortlistingAgent(userInput, context.jd_text || "");
+                    break;
+                case "prep":
+                    if (sessionId) {
+                        response = await sendPrepChat(sessionId, userInput);
+                    } else {
+                        // Fallback or legacy prep logic
+                        response = { reply: "Please start a session first by selecting a company and topics." };
+                    }
                     break;
                 case "dashboard":
                 default:
@@ -91,23 +106,25 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
                 setMemory(response.memory);
             }
 
-            return response.reply || "No reply received."
+            return JSON.stringify(response) || "No reply received.";
         } catch (error) {
             console.error("Error:", error)
             return "Sorry, I encountered a connection error."
         }
     }
 
-    const handleSendMessage = async (text: string) => {
+    const handleSendMessage = async (text: string, silent = false) => {
         if (!text.trim()) return
 
-        const userMessage: Message = {
-            id: Date.now().toString(),
-            role: "user",
-            content: text,
+        if (!silent) {
+            const userMessage: Message = {
+                id: Date.now().toString(),
+                role: "user",
+                content: text,
+            }
+            setMessages((prev) => [...prev, userMessage])
         }
 
-        setMessages((prev) => [...prev, userMessage])
         setInput("")
         setIsLoading(true)
 
@@ -169,7 +186,21 @@ export function PlacementsChatbot({ initialMode = null, context = {} }: Placemen
                                 : "bg-gray-100 text-gray-900 rounded-bl-none"
                                 }`}
                         >
-                            <p>{message.content}</p>
+                            {(() => {
+                                let content = message.content;
+                                try {
+                                    const parsed = JSON.parse(message.content);
+                                    content = parsed.reply || message.content;
+                                } catch {
+                                    // Not JSON, use as is
+                                }
+
+                                return message.role === "assistant" ? (
+                                    <MarkdownText text={content} />
+                                ) : (
+                                    <p className="whitespace-pre-wrap">{content}</p>
+                                );
+                            })()}
                         </div>
                     </div>
                 ))}

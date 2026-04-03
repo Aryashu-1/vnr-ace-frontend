@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { TrendingUp, AlertTriangle, Briefcase, Zap } from "lucide-react"
-import { getPredictionPlacementPercentage, getPredictionSalaryTrends, getPredictionUnplacedRisk } from "@/lib/api"
+// ... existing imports ...
 import { PlacementChart } from "./PlacementChart"
 import { useAuth } from "@/components/auth-provider"
 
@@ -21,19 +21,17 @@ export function PredictionPanel() {
     useEffect(() => {
         const fetchPredictions = async () => {
             try {
-                // Attempt to fetch from real endpoints
-                const [percentage, salaryTrends, unplacedRisk] = await Promise.all([
-                    getPredictionPlacementPercentage().catch(() => ({ predicted: 92.5, current: 85 })),
-                    getPredictionSalaryTrends().catch(() => [
-                        { name: "2023", value: 12.5 },
-                        { name: "2024", value: 14.2 },
-                        { name: "2025(P)", value: 16.8 }
-                    ]),
-                    getPredictionUnplacedRisk().catch(() => [
-                        { roll: "19XJ1A0410", risk: "High", reason: "Low CGPA & No active skills" },
-                        { roll: "19XJ1A0521", risk: "Medium", reason: "No internships" }
-                    ])
-                ])
+                // FALLBACK: Using mock data as these endpoints were removed from API Documentation
+                const percentage = { predicted: 92.5, current: 85 };
+                const salaryTrends = [
+                    { name: "2023", value: 12.5 },
+                    { name: "2024", value: 14.2 },
+                    { name: "2025(P)", value: 16.8 }
+                ];
+                const unplacedRisk = [
+                    { roll: "19XJ1A0410", risk: "High", reason: "Low CGPA & No active skills" },
+                    { roll: "19XJ1A0521", risk: "Medium", reason: "No internships" }
+                ];
 
                 setData({ percentage, salaryTrends, unplacedRisk })
             } catch (e) {

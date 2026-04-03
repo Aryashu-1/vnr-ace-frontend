@@ -29,7 +29,7 @@ export function PlacementChart({
         switch (type) {
             case 'line':
                 return (
-                    <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <LineChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
                         <XAxis dataKey={xAxisKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
@@ -44,7 +44,7 @@ export function PlacementChart({
                 )
             case 'bar':
                 return (
-                    <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <BarChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
                         <XAxis dataKey={xAxisKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
@@ -62,7 +62,7 @@ export function PlacementChart({
                 return (
                     <PieChart>
                         <Pie
-                            data={data}
+                            data={data || []}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -73,7 +73,7 @@ export function PlacementChart({
                             label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                             labelLine={false}
                         >
-                            {data.map((entry, index) => (
+                            {data && data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                             ))}
                         </Pie>

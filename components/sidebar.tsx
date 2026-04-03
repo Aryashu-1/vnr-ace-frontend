@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Users, Briefcase, FileText, Settings, User, X } from "lucide-react"
+import { BookOpen, Users, Briefcase, Settings, X } from "lucide-react"
 import type { UserRole } from "@/lib/auth"
 
 interface SidebarProps {
@@ -29,7 +29,6 @@ export function Sidebar({ role, isOpen = true, onClose }: SidebarProps) {
       { label: "Admissions", href: "/admissions", icon: Users },
       { label: "Classwork", href: "/classwork", icon: BookOpen },
       { label: "Placements", href: "/placements", icon: Briefcase },
-      { label: "Reports", href: "/reports", icon: FileText },
       { label: "Admin Panel", href: "/admin", icon: Settings },
     ],
     guest: [
@@ -40,7 +39,6 @@ export function Sidebar({ role, isOpen = true, onClose }: SidebarProps) {
       { label: "Admissions", href: "/admissions", icon: Users },
       { label: "Classwork", href: "/classwork", icon: BookOpen },
       { label: "Placements", href: "/placements", icon: Briefcase },
-      { label: "Reports", href: "/reports", icon: FileText },
     ],
   }
 

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { StatCard } from "@/components/stat-card"
-import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { TrendingUp, Users } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { getDashboardStats } from "@/lib/api"
 
 interface PlacementStats {
     stats: { label: string, value: string, trend?: number }[]
@@ -16,11 +15,21 @@ export default function PlacementsDashboardPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        // Fetch mock stats
-        fetch(`${API_BASE_URL}/placements/dashboard-stats`)
-            .then(res => res.json())
-            .then(setData)
-            .catch(err => console.error(err))
+        getDashboardStats()
+            .then((response) => {
+                const normalized = Array.isArray(response?.stats) ? response : {
+                    stats: [
+                        { label: "Eligible Students", value: String(response?.total ?? 0) },
+                        { label: "Placed Students", value: String(response?.placed ?? 0) },
+                        { label: "Placement %", value: String(response?.percentage ?? 0) },
+                        { label: "Average Salary", value: String(response?.average ?? 0) },
+                    ],
+                    recent_placements: response?.recent_placements ?? [],
+                }
+
+                setData(normalized)
+            })
+            .catch((err) => console.error(err))
             .finally(() => setLoading(false))
     }, [])
 
@@ -29,9 +38,7 @@ export default function PlacementsDashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Placement Dashboard</h1>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-                {/* Left: Stats & Data */}
                 <div className="lg:col-span-2 overflow-y-auto pr-2 custom-scrollbar space-y-6">
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {loading ? (
                             Array(4).fill(0).map((_, i) => (
@@ -44,7 +51,6 @@ export default function PlacementsDashboardPage() {
                         )}
                     </div>
 
-                    {/* Recent Placements Table */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -66,8 +72,8 @@ export default function PlacementsDashboardPage() {
                                 <tbody>
                                     {loading ? (
                                         <tr><td colSpan={4} className="text-center py-4">Loading...</td></tr>
-                                    ) : (
-                                        data?.recent_placements.map((student, i) => (
+                                    ) : data?.recent_placements?.length ? (
+                                        data.recent_placements.map((student, i) => (
                                             <tr key={i} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
                                                 <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
                                                 <td className="px-4 py-3 text-gray-600">{student.branch}</td>
@@ -75,6 +81,8 @@ export default function PlacementsDashboardPage() {
                                                 <td className="px-4 py-3 text-green-600 font-medium">{student.package}</td>
                                             </tr>
                                         ))
+                                    ) : (
+                                        <tr><td colSpan={4} className="text-center py-4 text-gray-500">No recent placement records available.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -82,10 +90,15 @@ export default function PlacementsDashboardPage() {
                     </div>
                 </div>
 
-                {/* Right: Chatbot */}
-                {/* <div className="lg:col-span-1 h-full min-h-[500px]">
-                    <PlacementsChatbot initialMode="dashboard" />
-                </div> */}
+                <div className="lg:col-span-1 rounded-xl border border-dashed border-gray-200 bg-white/70 p-6 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 font-semibold text-gray-700">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        Live insights
+                    </div>
+                    <p className="mt-3 leading-6">
+                        This summary now reads from the same placement stats source as the main dashboard, so KPI cards and recent placement data stay in sync.
+                    </p>
+                </div>
             </div>
         </div>
     )
