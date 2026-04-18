@@ -1,4 +1,12 @@
-export const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1`
+const getBaseUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL
+    if (envUrl && envUrl.trim() !== "") {
+        return envUrl.endsWith("/") ? `${envUrl}api/v1` : `${envUrl}/api/v1`
+    }
+    return "http://localhost:8000/api/v1"
+}
+
+export const API_BASE_URL = getBaseUrl()
 
 // Auth helpers
 export const setToken = (token: string) => {
@@ -20,12 +28,15 @@ export const removeToken = () => {
     }
 }
 
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
     const formData = new URLSearchParams()
-    formData.append('username', email)
+    formData.append('username', username)
     formData.append('password', password)
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const url = `${API_BASE_URL}/auth/login`
+    console.log(`Attempting login at: ${url}`)
+
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -34,6 +45,8 @@ export async function login(email: string, password: string) {
     })
 
     if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Login failed: ${response.status}`, errorText)
         throw new Error('Login failed')
     }
 
@@ -186,6 +199,18 @@ export const sendResumeFeedback = (payload: ResumeFeedbackRequest) =>
         body: JSON.stringify(payload),
     });
 
+export interface ResumeChatRequest {
+    message: string;
+    structured_analysis: any;
+    conversation_history?: any[];
+}
+
+export const sendResumeChat = (payload: ResumeChatRequest) =>
+    fetchFromApi("/placements/resume/chat", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+
 export const sendShortlistingAgent = (message: string, jd_text: string) =>
     fetchFromApi("/placements/shortlisting-agent", {
         method: "POST",
@@ -204,6 +229,71 @@ export const analyzeResumeDirect = (file?: File, resume_text?: string) => {
         body: formData,
     });
 };
+
+export interface ResumeSectionFeedback {
+    score?: number | null;
+    issues?: string[];
+    suggestions?: string[];
+    example_rewrites?: string[];
+    strengths?: string[];
+    weaknesses?: string[];
+}
+
+export interface ResumeAnalysis {
+    overall_score?: number | null;
+    score?: number | null;
+    summary?: string[];
+    strengths?: string[];
+    weaknesses?: string[];
+    section_feedback?: Record<string, ResumeSectionFeedback>;
+    ats_issues?: string[];
+    priority_fixes?: string[];
+}
+
+export interface ResumeRecord {
+    id?: string;
+    resume_id?: string;
+    file_name?: string;
+    title?: string;
+    structured_json?: Record<string, any> | null;
+    structured_resume?: Record<string, any> | null;
+    analysis?: ResumeAnalysis | null;
+    latest_analysis?: ResumeAnalysis | null;
+    created_at?: string;
+    updated_at?: string;
+    [key: string]: any;
+}
+
+export const uploadResumeEditor = (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return fetchFromApi("/placements/resume/upload", {
+        method: "POST",
+        body: formData,
+    });
+};
+
+export const getResumeEditor = (resumeId: string) =>
+    fetchFromApi(`/placements/resume/${resumeId}`);
+
+export const editResumeEditor = (resumeId: string, payload: Record<string, any>) =>
+    fetchFromApi(`/placements/resume/${resumeId}/edit`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+
+export const improveResumeEditor = (resumeId: string, payload: Record<string, any>) =>
+    fetchFromApi(`/placements/resume/${resumeId}/improve`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+
+export const reanalyzeResumeEditor = (resumeId: string, payload: Record<string, any> = {}) =>
+    fetchFromApi(`/placements/resume/${resumeId}/reanalyze`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
 
 export const runShortlistingDirect = (jd_text: string, no_of_students: number = 5, min_cgpa?: number, branch?: string) => {
     const params = new URLSearchParams();
@@ -235,4 +325,3 @@ export const sendPrepChat = (session_id: string, message: string) =>
     });
 
 // AI SQL Engine
-

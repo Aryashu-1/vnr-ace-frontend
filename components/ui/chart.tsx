@@ -49,6 +49,11 @@ function ChartContainer({
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`
 
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <ChartContext.Provider value={{ config }}>
       <div
@@ -61,9 +66,13 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {mounted ? (
+          <RechartsPrimitive.ResponsiveContainer minWidth={0}>
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : (
+          <div className="h-full w-full bg-slate-50 dark:bg-slate-800/50 animate-pulse rounded-lg" />
+        )}
       </div>
     </ChartContext.Provider>
   )

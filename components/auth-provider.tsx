@@ -36,19 +36,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     const login = async (username: string, password?: string): Promise<User | null> => {
+        console.log("AuthProvider.login called for:", username)
         setIsLoading(true)
 
         try {
             // Call real Login API
             if (!password) {
-                // Keep mock behavior for "student", "faculty" etc if no password provided? 
-                // The task says "update LoginPage UI for Email/Password", so we expect password now.
-                // But for safety/backward compat during dev, I'll throw error or handle it.
-                // Actually the User Request says "implement actual login via our api".
+                console.error("No password provided to AuthProvider.login")
                 throw new Error("Password is required for login")
             }
 
+            console.log("Calling api.login...")
             const data = await api.login(username, password)
+            console.log("api.login response data:", data)
 
             if (data.access_token && data.user) {
                 const apiUser = data.user

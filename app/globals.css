@@ -142,8 +142,16 @@
   @apply shadow-lg shadow-blue-500/20;
 }
 
+.text-glow-blue {
+  text-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
 .glow-cyan {
   @apply shadow-lg shadow-cyan-400/20;
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
 }
 
 .transition-smooth {

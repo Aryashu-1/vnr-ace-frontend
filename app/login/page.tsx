@@ -18,10 +18,12 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
+        console.log("Form submitted, attempting login for:", username)
         setError("")
         setIsSubmitting(true)
 
         try {
+            console.log("Calling authProvider.login...")
             const user = await login(username, password)
             if (user) {
                 // If a specific redirect is requested via URL, respect it

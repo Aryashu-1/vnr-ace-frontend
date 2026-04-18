@@ -45,9 +45,11 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
         }
     }, [initialMode])
 
-    // Watch for new context injection (e.g. starting company prep)
+    // Watch for new context injection (e.g. starting company prep or resume feedback)
     useEffect(() => {
-        if (context && (context.type === "COMPANY_PREP" || context.type === "INTERVIEW_PREP")) {
+        if (!context) return;
+
+        if (context.type === "COMPANY_PREP" || context.type === "INTERVIEW_PREP") {
             setActiveMode("prep");
             
             // If we have a sessionId and a firstMessage, "call the next node" (using silent trigger)
@@ -60,6 +62,19 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
                     id: Date.now().toString(),
                     role: "assistant",
                     content: `Loaded **${context.company}** preparation context! I'm ready to help you with interview tips and mock questions.`
+                }]);
+            }
+        }
+
+        if (context.type === "RESUME_FEEDBACK_GARDEN") {
+            setActiveMode("resume");
+            if (!initializedSessions.current.has("resume-feedback")) {
+                initializedSessions.current.add("resume-feedback");
+                const score = context.overall_score || "N/A";
+                setMessages([{
+                    id: Date.now().toString(),
+                    role: "assistant",
+                    content: `Hi! I've analyzed your resume and synced the feedback (ATS Score: **${score}/10**). I can help you rewrite specific bullets, explain the section-wise issues, or suggest how to reach a perfect 10. What should we tackle first?`
                 }]);
             }
         }
@@ -82,8 +97,23 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
 
             switch (activeMode) {
                 case "resume":
-                    response = await analyzeResumeDirect(undefined, context.resume_text || "");
-                    break;
+                    {
+                        const chatResponse = await sendResumeChat({
+                            message: userInput,
+                            structured_analysis: context,
+                            conversation_history: memory.length > 0 ? memory : []
+                        });
+                        
+                        // Update memory with the Gemini-format history returned by the backend
+                        if (chatResponse.conversation_history) {
+                            setMemory(chatResponse.conversation_history);
+                        }
+                        
+                        return JSON.stringify({
+                            reply: chatResponse.reply,
+                            conversation_history: chatResponse.conversation_history
+                        });
+                    }
                 case "shortlisting":
                     response = await sendShortlistingAgent(userInput, context.jd_text || "");
                     break;
@@ -182,8 +212,8 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
                     <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                         <div
                             className={`max-w-[85%] px-4 py-2 rounded-lg text-sm ${message.role === "user"
-                                ? "bg-indigo-600 text-white rounded-br-none"
-                                : "bg-gray-100 text-gray-900 rounded-bl-none"
+                                ? "bg-slate-950 text-white rounded-br-none"
+                                : "bg-slate-100 text-slate-900 rounded-bl-none"
                                 }`}
                         >
                             {(() => {
@@ -248,7 +278,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
                 <button
                     type="submit"
                     disabled={isLoading || !input.trim()}
-                    className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-all"
+                    className="bg-sky-600 text-white p-2 rounded-lg hover:bg-sky-700 disabled:bg-slate-300 transition-all"
                 >
                     <Send className="w-4 h-4" />
                 </button>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -24,6 +25,11 @@ export function PlacementChart({
     title, type, data, dataKey = 'value', nameKey = 'name', xAxisKey = 'name',
     colors = DEFAULT_COLORS, delay = 0
 }: ChartProps) {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const renderChart = () => {
         switch (type) {
@@ -103,9 +109,14 @@ export function PlacementChart({
                 </CardHeader>
                 <CardContent>
                     <div className="h-[300px] w-full mt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            {renderChart()}
-                        </ResponsiveContainer>
+                        {/* Only render ResponsiveContainer after mounting to avoid size calculation warnings during SSR/Initial hydration */}
+                        {mounted ? (
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                {renderChart()}
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full w-full bg-slate-50 dark:bg-slate-800/50 animate-pulse rounded-lg" />
+                        )}
                     </div>
                 </CardContent>
             </Card>
