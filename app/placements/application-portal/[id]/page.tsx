@@ -4,7 +4,8 @@ import Link from "next/link";
 import {
     Building2, MapPin, Calendar, ChevronLeft,
     IndianRupee, Briefcase, Code2, GraduationCap,
-    AlertCircle, CheckCircle2, Clock, Send
+    AlertCircle, CheckCircle2, Clock, Send,
+    ExternalLink, AlertTriangle
 } from "lucide-react";
 import { ApplyButton } from "./apply-button";
 
@@ -78,6 +79,45 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
 
                     {/* Main Content */}
                     <div className="md:col-span-2 space-y-6">
+                        {/* External Registration Warning */}
+                        {job.requiresExternalRegistration && !job.isRegisteredExternally && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-amber-100 rounded-xl">
+                                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-amber-900">External Registration Required</h3>
+                                        <p className="text-sm text-amber-700 mt-1">
+                                            You must register on the company's portal before you can apply here.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={job.externalRegistrationUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 transition-all shadow-sm"
+                                >
+                                    Register Now
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                            </div>
+                        )}
+
+                        {job.requiresExternalRegistration && job.isRegisteredExternally && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex items-center gap-4">
+                                <div className="p-3 bg-emerald-100 rounded-xl">
+                                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-emerald-900">External Registration Verified</h3>
+                                    <p className="text-sm text-emerald-700 mt-1">
+                                        You have successfully registered on the company portal. You can now proceed with your application.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Job Description */}
                         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8">

@@ -24,6 +24,9 @@ export interface JobOpportunity {
     status: 'Open' | 'Closed' | 'Applied';
     instructions?: string[];
     editDeadline?: string;
+    externalRegistrationUrl?: string;
+    requiresExternalRegistration?: boolean;
+    isRegisteredExternally?: boolean;
 }
 
 export const DUMMY_JOBS: JobOpportunity[] = [
@@ -82,7 +85,10 @@ export const DUMMY_JOBS: JobOpportunity[] = [
         instructions: [
             "Submit your latest resume highlighting ML/Data Science projects.",
             "A portfolio showcasing Kaggle competitions or research papers is highly recommended."
-        ]
+        ],
+        externalRegistrationUrl: "https://careers.datasphere.ai/apply/student-hiring-2026",
+        requiresExternalRegistration: true,
+        isRegisteredExternally: false,
     },
     {
         id: "3",

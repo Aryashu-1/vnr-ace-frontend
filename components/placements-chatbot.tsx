@@ -3,8 +3,9 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send, LayoutDashboard, FileText, CheckCircle, TrendingUp, Zap, Building2, Code } from "lucide-react"
-import { API_BASE_URL, sendLiveDashboard, sendShortlistingAgent, sendChartGenerator, analyzeResumeDirect, AgentResponse, sendPrepChat } from "@/lib/api"
+import { API_BASE_URL, sendLiveDashboard, sendShortlistingAgent, sendChartGenerator, analyzeResumeDirect, sendResumeChat, AgentResponse, sendPrepChat } from "@/lib/api"
 import { MarkdownText } from "./markdown-text"
+import { useErrorHandler } from "@/hooks/use-error-handler"
 
 interface Message {
     id: string
@@ -28,6 +29,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
     const [memory, setMemory] = useState<any[]>([])
     const initializedSessions = useRef<Set<string>>(new Set())
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const { handleError } = useErrorHandler()
 
     // Initialize mode/welcome message
     useEffect(() => {
@@ -138,8 +140,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
 
             return JSON.stringify(response) || "No reply received.";
         } catch (error) {
-            console.error("Error:", error)
-            return "Sorry, I encountered a connection error."
+            return handleError(error, "Sorry, I encountered a connection error.")
         }
     }
 
@@ -195,7 +196,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
 
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full flex flex-col">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 h-full flex flex-col">
             {/* Header */}
             <div className="mb-4 text-center border-b pb-2">
                 <h3 className="font-bold text-gray-900 text-lg">
@@ -211,7 +212,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
                 {messages.map((message) => (
                     <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                         <div
-                            className={`max-w-[85%] px-4 py-2 rounded-lg text-sm ${message.role === "user"
+                            className={`max-w-[85%] px-2 py-1 sm:px-4 sm:py-2 rounded-lg text-sm ${message.role === "user"
                                 ? "bg-slate-950 text-white rounded-br-none"
                                 : "bg-slate-100 text-slate-900 rounded-bl-none"
                                 }`}
@@ -228,7 +229,7 @@ export function PlacementsChatbot({ initialMode = null, context = {}, sessionId 
                                 return message.role === "assistant" ? (
                                     <MarkdownText text={content} />
                                 ) : (
-                                    <p className="whitespace-pre-wrap">{content}</p>
+                                    <p className="whitespace-normal sm:whitespace-pre-wrap">{content}</p>
                                 );
                             })()}
                         </div>

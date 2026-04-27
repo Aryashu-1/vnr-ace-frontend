@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send, GraduationCap, FileBarChart2 } from "lucide-react"
 import { API_BASE_URL, getToken, sendFacultyEnquiry, sendEmailAutomation, sendReportGeneration } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
+import { useErrorHandler } from "@/hooks/use-error-handler"
 
 interface Message {
     id: string
@@ -25,6 +26,7 @@ export function ClassworkChatbot() {
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const { handleError } = useErrorHandler()
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -43,8 +45,7 @@ export function ClassworkChatbot() {
             
             return data.reply || "No reply received."
         } catch (error) {
-            console.error("Network error:", error)
-            return `Could not reach backend. Error: ${error instanceof Error ? error.message : "Unknown error"}`
+            return handleError(error, "Could not reach backend.")
         }
     }
 

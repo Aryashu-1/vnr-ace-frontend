@@ -50,8 +50,8 @@ export default function LoginPage() {
             } else {
                 setError("Invalid credentials. Try 'student', 'faculty', or 'admin'.")
             }
-        } catch (err) {
-            setError("An error occurred during login.")
+        } catch (err: any) {
+            setError(err instanceof Error ? err.message : "An error occurred during login.")
         } finally {
             setIsSubmitting(false)
         }

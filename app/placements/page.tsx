@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { StatCard } from "@/components/stat-card"
-import { Briefcase, TrendingUp, FileText, Building2, Zap, Code, Loader2, PieChart } from "lucide-react"
+import { Briefcase, TrendingUp, FileText, Building2, Zap, Code, Loader2, PieChart, ShieldCheck } from "lucide-react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
 import { useAuth } from "@/components/auth-provider"
 import { SignInPrompt } from "@/components/sign-in-prompt"
@@ -71,6 +71,16 @@ export default function PlacementsPage() {
       iconColor: "text-teal-600",
       button: "Browse Jobs",
       link: "/placements/application-portal",
+    },
+    {
+      id: 7,
+      title: "Placements Policy",
+      description: "Read the rules, regulations, and eligibility policies for campus placements",
+      icon: ShieldCheck,
+      color: "bg-amber-100",
+      iconColor: "text-amber-600",
+      button: "View Policy",
+      link: "/placements/policy",
     },
   ]
 

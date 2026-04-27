@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react"
-import { Send, UploadCloud, File, CheckCircle2, Edit2, XCircle, Clock } from "lucide-react"
+import { Send, UploadCloud, File, CheckCircle2, Edit2, XCircle, Clock, AlertTriangle, ExternalLink } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -158,6 +158,23 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
                         isEditing={true}
                     />
                 )}
+            </div>
+        )
+    }
+
+    if (job.requiresExternalRegistration && !job.isRegisteredExternally) {
+        return (
+            <div className="flex flex-col gap-2 w-full md:w-auto">
+                <button
+                    disabled
+                    className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-sm bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                >
+                    <AlertTriangle className="w-4 h-4" />
+                    Registration Required
+                </button>
+                <p className="text-[10px] text-amber-600 font-medium text-center italic">
+                    Register externally to unlock
+                </p>
             </div>
         )
     }

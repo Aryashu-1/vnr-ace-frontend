@@ -8,6 +8,18 @@ const getBaseUrl = () => {
 
 export const API_BASE_URL = getBaseUrl()
 
+export class ApiError extends Error {
+    status: number;
+    data: any;
+
+    constructor(message: string, status: number, data?: any) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+        this.data = data;
+    }
+}
+
 // Auth helpers
 export const setToken = (token: string) => {
     if (typeof window !== 'undefined') {
@@ -45,9 +57,16 @@ export async function login(username: string, password: string) {
     })
 
     if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`Login failed: ${response.status}`, errorText)
-        throw new Error('Login failed')
+        let errorMsg = 'Login failed'
+        let errorData = null
+        try {
+            errorData = await response.json()
+            errorMsg = errorData.detail || errorData.message || errorMsg
+        } catch {
+            // keep default
+        }
+        console.error(`Login failed: ${response.status}`, errorMsg)
+        throw new ApiError(errorMsg, response.status, errorData)
     }
 
     return response.json()
@@ -73,9 +92,10 @@ export async function fetchFromApi(endpoint: string, options: RequestInit = {}) 
 
     if (!response.ok) {
         let message = `API call failed: ${response.status} ${response.statusText}`
+        let errorData: any = null;
 
         try {
-            const errorData = await response.json()
+            errorData = await response.json()
             message =
                 errorData?.detail ||
                 errorData?.message ||
@@ -94,7 +114,7 @@ export async function fetchFromApi(endpoint: string, options: RequestInit = {}) 
             }
         }
 
-        throw new Error(message)
+        throw new ApiError(message, response.status, errorData)
     }
 
     return response.json()

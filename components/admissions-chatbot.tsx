@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Send } from "lucide-react"
 import { sendAdmissionsChat } from "@/lib/api"
+import { useErrorHandler } from "@/hooks/use-error-handler"
 
 interface Message {
   id: string
@@ -23,6 +24,7 @@ export function AdmissionsChatbot() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { handleError } = useErrorHandler()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -38,8 +40,7 @@ export function AdmissionsChatbot() {
       const data = await sendAdmissionsChat(userInput)
       return data.reply || "No reply received."
     } catch (error) {
-      console.error("Network error:", error)
-      return "Could not reach backend."
+      return handleError(error, "Could not reach backend.")
     }
   }
 
@@ -72,7 +73,7 @@ export function AdmissionsChatbot() {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full flex flex-col">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 h-full flex flex-col">
       {/* Header */}
       <div className="mb-4">
         <h3 className="font-bold text-gray-900 text-lg">Admissions Chatbot</h3>

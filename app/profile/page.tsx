@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/components/auth-provider"
-import { Loader2, User, Mail, Phone, Calendar, Building, Hash, BookOpen } from "lucide-react"
+import { Loader2, User, Mail, Phone, Calendar, Building, Hash, BookOpen, TrendingDown, Zap, Code, MessageSquare, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
 export default function ProfilePage() {
@@ -125,6 +125,73 @@ export default function ProfilePage() {
         </div>
 
 
+
+        {/* Placement Performance & Recommendations (Student Only) */}
+        {user.role === 'student' && (
+          <div className="pt-8 space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-red-500" />
+              Placement Performance & Recommendations
+            </h3>
+            
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Total Applications</p>
+                  <p className="text-2xl font-bold text-gray-900">14</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Rejections</p>
+                  <p className="text-2xl font-bold text-red-600">11</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Needs Attention
+                  </span>
+                </div>
+              </div>
+
+              {/* Training Recommendations if rejections > 10 */}
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-amber-800 font-bold">
+                  <Zap className="w-5 h-5" />
+                  <h4>Training Recommendations</h4>
+                </div>
+                <p className="text-sm text-amber-700 leading-relaxed">
+                  Based on your continuous rejections in technical rounds (11 rejections), our AI recommends focusing on the following areas to improve your success rate:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { topic: "Data Structures & Algorithms", detail: "Focus on Graph theory and DP", icon: Code },
+                    { topic: "System Design", detail: "Review Scalability and Load Balancing", icon: Building },
+                    { topic: "Mock Interviews", detail: "Schedule 2 mocks with faculty this week", icon: User },
+                    { topic: "Soft Skills", detail: "Focus on articulating technical solutions", icon: MessageSquare }
+                  ].map((rec, i) => (
+                    <div key={i} className="bg-white p-3 rounded-lg border border-amber-200 flex items-start gap-3">
+                      <div className="p-1.5 bg-amber-50 rounded text-amber-600">
+                        <rec.icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{rec.topic}</p>
+                        <p className="text-xs text-gray-500">{rec.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2">
+                  <Link 
+                    href="/placements/prep" 
+                    className="text-sm font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 underline decoration-amber-300 underline-offset-4"
+                  >
+                    Start Personalized Prep Agent
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="pt-8 mt-8 border-t border-gray-200 flex justify-end">
