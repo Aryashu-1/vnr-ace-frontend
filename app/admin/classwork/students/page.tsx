@@ -1,14 +1,15 @@
 "use client"
 
-import { ChangeEvent, useMemo, useRef, useState } from "react"
+import { ChangeEvent, useMemo, useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Search, Trash2, Pencil, Upload, ArrowLeft, FileSpreadsheet } from "lucide-react"
+import { Plus, Search, Trash2, Pencil, Upload, ArrowLeft, FileSpreadsheet, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { getAdminStudents, createOrUpdateStudent, deleteStudent } from "@/lib/api"
 
 interface Student {
   id: string
@@ -24,15 +25,12 @@ const emptyStudentForm = {
   name: "",
   section: "",
   year: "3",
-  attendance: "",
+  attendance: "75",
 }
 
 export default function StudentDataPage() {
-  const [students, setStudents] = useState<Student[]>([
-    { id: "1", rollNo: "21071A0501", name: "Aarav Patel", section: "A", year: 3, attendance: "85%" },
-    { id: "2", rollNo: "21071A0502", name: "Isha Sharma", section: "B", year: 3, attendance: "92%" },
-    { id: "3", rollNo: "21071A0503", name: "Rohan Das", section: "A", year: 3, attendance: "78%" },
-  ])
+  const [students, setStudents] = useState<Student[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -40,12 +38,25 @@ export default function StudentDataPage() {
   const [message, setMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const filteredStudents = useMemo(() => (
-    students.filter((student) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.rollNo.includes(searchTerm)
-    )
-  ), [searchTerm, students])
+  const fetchStudents = async (search?: string) => {
+    setIsLoading(true)
+    try {
+      const data = await getAdminStudents(search)
+      setStudents(data)
+    } catch (error) {
+      console.error("Failed to fetch students:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStudents()
+  }, [])
+
+  const handleSearch = () => {
+    fetchStudents(searchTerm)
+  }
 
   const resetForm = () => {
     setForm(emptyStudentForm)
@@ -58,78 +69,57 @@ export default function StudentDataPage() {
   }
 
   const handleAddClick = () => {
-    setMessage("Student records are still local-only on this screen, but you can now add entries and bulk import CSV or JSON files for review.")
+    setMessage(null)
     setEditingId(null)
     setForm(emptyStudentForm)
     setIsFormOpen(true)
   }
 
   const handleEdit = (student: Student) => {
-    setMessage("Editing is available locally on this page. Backend persistence can be connected once the student admin API is ready.")
+    setMessage(null)
     setEditingId(student.id)
     setForm({
       rollNo: student.rollNo,
       name: student.name,
-      section: student.section,
-      year: String(student.year),
-      attendance: student.attendance.replace("%", ""),
+      section: student.section || "",
+      year: String(student.year || 1),
+      attendance: student.attendance?.replace("%", "") || "0",
     })
     setIsFormOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    setStudents((prev) => prev.filter((student) => student.id !== id))
-    if (editingId === id) {
-      resetForm()
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this student?")) return
+    try {
+      await deleteStudent(id)
+      fetchStudents()
+    } catch (error) {
+      console.error("Failed to delete student:", error)
     }
   }
 
-  const handleSubmit = () => {
-    if (!form.rollNo.trim() || !form.name.trim() || !form.section.trim() || !form.attendance.trim()) {
-      setMessage("Roll number, name, section, and attendance are required.")
+  const handleSubmit = async () => {
+    if (!form.rollNo.trim() || !form.name.trim()) {
+      alert("Roll number and name are required.")
       return
     }
 
-    const nextStudent: Student = {
-      id: editingId ?? `${Date.now()}`,
-      rollNo: form.rollNo.trim(),
-      name: form.name.trim(),
+    const payload = {
+      roll_no: form.rollNo.trim(),
+      full_name: form.name.trim(),
       section: form.section.trim().toUpperCase(),
-      year: Number(form.year) || 1,
-      attendance: `${form.attendance.replace("%", "").trim()}%`,
+      current_year: Number(form.year) || 1,
+      attendance: parseFloat(form.attendance) || 0
     }
 
-    setStudents((prev) => (
-      editingId
-        ? prev.map((student) => student.id === editingId ? nextStudent : student)
-        : [nextStudent, ...prev]
-    ))
-
-    setMessage(editingId ? "Student entry updated locally." : "Student entry added locally.")
-    resetForm()
-  }
-
-  const handleBulkImport = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
     try {
-      const content = await file.text()
-      const imported = file.name.toLowerCase().endsWith(".json")
-        ? parseJsonStudents(content)
-        : parseCsvStudents(content)
-
-      if (!imported.length) {
-        setMessage("No valid student rows were found in the selected file.")
-        return
-      }
-
-      setStudents((prev) => [...imported, ...prev])
-      setMessage(`Imported ${imported.length} student record${imported.length === 1 ? "" : "s"} locally from ${file.name}.`)
-    } catch {
-      setMessage("Bulk import expects CSV or JSON with rollNo, name, section, year, and attendance columns.")
-    } finally {
-      event.target.value = ""
+      await createOrUpdateStudent(payload, editingId || undefined)
+      setMessage(editingId ? "Student entry updated." : "Student entry added.")
+      resetForm()
+      fetchStudents()
+    } catch (error) {
+      console.error("Failed to save student:", error)
+      alert("Error saving student.")
     }
   }
 
@@ -142,7 +132,7 @@ export default function StudentDataPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Student Records Management</h1>
+          <h1 className="text-3xl font-bold text-blue-900">Student Records Management</h1>
           <p className="text-muted-foreground">Update and manage student information for classwork modules.</p>
         </div>
       </div>
@@ -156,27 +146,21 @@ export default function StudentDataPage() {
       )}
 
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by Roll No or Name..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex w-full max-w-sm gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by Roll No or Name..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+          </div>
+          <Button onClick={handleSearch} variant="secondary">Search</Button>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.json"
-            className="hidden"
-            onChange={handleBulkImport}
-          />
-          <Button variant="outline" className="flex-1 md:flex-none gap-2" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="w-4 h-4" /> Bulk Import
-          </Button>
-          <Button className="flex-1 md:flex-none gap-2" onClick={handleAddClick}>
+          <Button className="bg-blue-600 hover:bg-blue-700 flex-1 md:flex-none gap-2" onClick={handleAddClick}>
             <Plus className="w-4 h-4" /> Add Student
           </Button>
         </div>
@@ -187,7 +171,7 @@ export default function StudentDataPage() {
           <CardHeader className="pb-4">
             <CardTitle>{editingId ? "Edit Student" : "Add Student"}</CardTitle>
             <CardDescription>
-              This updates the local admin table immediately. Backend persistence can plug into the same form later.
+              Fill in the details to update student records in the database.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -212,74 +196,76 @@ export default function StudentDataPage() {
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <div className="space-y-2">
                 <Label htmlFor="attendance">Attendance %</Label>
-                <Input id="attendance" value={form.attendance} onChange={(e) => handleFieldChange("attendance", e.target.value)} placeholder="85" />
+                <Input id="attendance" type="number" value={form.attendance} onChange={(e) => handleFieldChange("attendance", e.target.value)} placeholder="85" />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={resetForm}>Cancel</Button>
-                <Button onClick={handleSubmit}>{editingId ? "Save Changes" : "Add Student"}</Button>
+                <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">{editingId ? "Save Changes" : "Add Student"}</Button>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="border-none shadow-lg">
+      <Card className="border-blue-50 shadow-lg">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead className="font-bold py-4">Roll Number</TableHead>
-                <TableHead className="font-bold py-4">Student Name</TableHead>
-                <TableHead className="font-bold py-4 text-center">Section</TableHead>
-                <TableHead className="font-bold py-4 text-center">Year</TableHead>
-                <TableHead className="font-bold py-4 text-right">Attendance</TableHead>
-                <TableHead className="font-bold py-4 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStudents.length > 0 ? (
-                filteredStudents.map((student) => (
-                  <TableRow key={student.id} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-mono font-medium">{student.rollNo}</TableCell>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary" className="px-3 py-0.5">{student.section}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">{student.year}</TableCell>
-                    <TableCell className="text-right">
-                      <span className={parseInt(student.attendance) < 80 ? "text-red-500 font-bold" : "text-green-600 font-medium"}>
-                        {student.attendance}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => handleEdit(student)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(student.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-blue-50/50">
+                <TableRow>
+                  <TableHead className="font-bold py-4 pl-6">Roll Number</TableHead>
+                  <TableHead className="font-bold py-4">Student Name</TableHead>
+                  <TableHead className="font-bold py-4 text-center">Section</TableHead>
+                  <TableHead className="font-bold py-4 text-center">Year</TableHead>
+                  <TableHead className="font-bold py-4 text-right">Attendance</TableHead>
+                  <TableHead className="font-bold py-4 text-right pr-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.length > 0 ? (
+                  students.map((student) => (
+                    <TableRow key={student.id} className="hover:bg-blue-50/10 transition-colors">
+                      <TableCell className="font-mono font-medium pl-6">{student.rollNo}</TableCell>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary" className="px-3 py-0.5 bg-blue-100 text-blue-800">{student.section}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">{student.year}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={parseFloat(student.attendance) < 80 ? "text-red-500 font-bold" : "text-green-600 font-medium"}>
+                          {student.attendance}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right space-x-1 pr-6">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => handleEdit(student)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(student.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-40 text-center text-muted-foreground italic">
+                      No students found.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground italic">
-                    No students found matching your search.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
       <div className="flex items-center justify-between mt-4 px-2">
-        <p className="text-sm text-gray-500">Showing {filteredStudents.length} of {students.length} students</p>
+        <p className="text-sm text-gray-500">Total Records: {students.length}</p>
         <div className="flex gap-2">
-          <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 border rounded-md px-3 py-2">
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            CSV/JSON import supported
-          </div>
           <Button variant="outline" size="sm" disabled>Previous</Button>
           <Button variant="outline" size="sm" disabled>Next</Button>
         </div>

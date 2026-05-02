@@ -17,8 +17,10 @@ import {
     User,
     ArrowRight,
     Loader2,
+    WandSparkles,
 } from "lucide-react"
-import { analyzeResumeDirect, fetchFromApi } from "@/lib/api"
+import { analyzeResumeDirect, fetchFromApi, uploadResumeEditor } from "@/lib/api"
+import { toast } from "sonner"
 import { MarkdownText } from "@/components/markdown-text"
 
 // --- Types ---
@@ -447,7 +449,6 @@ export default function ResumeAnalysisPage() {
                                 <p className="text-[10px] text-center text-gray-400 mt-4 font-black uppercase tracking-widest">Powered by Academic Reasoning Engine</p>
                             </form>
                         </div>
-
                     </div>
                 )}
             </div>

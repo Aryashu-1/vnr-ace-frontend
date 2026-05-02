@@ -1,20 +1,61 @@
-import { DUMMY_JOBS } from "../data";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import {
-    Building2, MapPin, Calendar, ChevronLeft,
+"use client"
+
+import { useEffect, useState } from "react";
+import { getJobDetail, JobListing } from "@/lib/api";
+import { 
+    Loader2, Building2, MapPin, Calendar, ChevronLeft,
     IndianRupee, Briefcase, Code2, GraduationCap,
     AlertCircle, CheckCircle2, Clock, Send,
     ExternalLink, AlertTriangle
 } from "lucide-react";
+import Link from "next/link";
 import { ApplyButton } from "./apply-button";
+import { notFound } from "next/navigation";
 
-export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const resolvedParams = await params;
-    const job = DUMMY_JOBS.find(j => j.id === resolvedParams.id);
+import { usePlacements } from "@/components/placements-provider";
 
+import React from "react";
+
+export default function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = React.use(params);
+    const { getJobById, isLoading: isContextLoading } = usePlacements();
+    const [job, setJob] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchJob = async () => {
+            const cachedJob = getJobById(id);
+            if (cachedJob) {
+                setJob(cachedJob);
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const found = await getJobDetail(id);
+                setJob(found);
+            } catch (error) {
+                console.error("Error fetching job details:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        if (!isContextLoading) {
+            fetchJob();
+        }
+    }, [id, getJobById, isContextLoading]);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+    
     if (!job) {
-        notFound();
+        return <div className="p-8 text-center">Job not found or has been closed.</div>
     }
 
     return (
@@ -37,14 +78,14 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
 
                     <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 md:items-center justify-between">
                         <div className="flex items-center gap-6">
-                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold ${job.logoBg} shadow-inner`}>
-                                {job.logoText}
+                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold bg-blue-100 text-blue-600 shadow-inner`}>
+                                {job.company_name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{job.role}</h1>
                                 <div className="flex items-center gap-2 text-lg font-medium text-gray-600">
                                     <Building2 className="w-5 h-5" />
-                                    {job.companyName}
+                                    {job.company_name}
                                 </div>
                             </div>
                         </div>
@@ -53,17 +94,17 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                             <ApplyButton job={job} />
                             <div className="text-xs text-gray-500 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
-                                Closes: {job.deadline}
+                                Open for applications
                             </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100 border-t border-gray-100">
                         {[
-                            { label: "Package", value: job.package, icon: IndianRupee },
-                            { label: "Location", value: job.location, icon: MapPin },
-                            { label: "Role Type", value: job.tags[0], icon: Briefcase },
-                            { label: "Eligibility", value: job.criteria.cgpa, icon: GraduationCap },
+                            { label: "Package", value: `${job.ctc} LPA`, icon: IndianRupee },
+                            { label: "Location", value: job.location || "Campus Drive", icon: MapPin },
+                            { label: "Role Type", value: "Full Time", icon: Briefcase },
+                            { label: "Eligibility", value: job.criteria?.cgpa || "7.0+ CGPA", icon: GraduationCap },
                         ].map((stat, i) => (
                             <div key={i} className="p-4 flex flex-col items-center justify-center text-center bg-gray-50/50">
                                 <div className="text-gray-400 mb-1"><stat.icon className="w-5 h-5" /></div>
@@ -138,7 +179,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                             </h2>
 
                             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-                                {job.examRounds.map((round, i) => (
+                                {job.examRounds?.map((round, i) => (
                                     <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                                         <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-100 text-blue-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-sm">
                                             {round.round}
@@ -168,12 +209,12 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                             <ul className="space-y-4">
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Minimum CGPA</div>
-                                    <div className="font-semibold text-gray-900">{job.criteria.cgpa}</div>
+                                    <div className="font-semibold text-gray-900">{job.criteria?.cgpa || "N/A"}</div>
                                 </li>
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Eligible Branches</div>
                                     <div className="flex flex-wrap gap-1.5 mt-1">
-                                        {job.criteria.branches.map((b, i) => (
+                                        {job.criteria?.branches?.map((b, i) => (
                                             <span key={i} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded font-medium">
                                                 {b}
                                             </span>
@@ -182,7 +223,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                                 </li>
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Backlog History</div>
-                                    <div className="text-sm text-gray-800">{job.criteria.backlogs}</div>
+                                    <div className="text-sm text-gray-800">{job.criteria?.backlogs || "N/A"}</div>
                                 </li>
                             </ul>
                         </div>
@@ -194,11 +235,42 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                                 Required Skills
                             </h2>
                             <div className="flex flex-wrap gap-2">
-                                {job.skills.map((skill, i) => (
+                                {job.skills?.map((skill, i) => (
                                     <span key={i} className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-lg border border-blue-100 font-medium hover:bg-blue-100 transition-colors cursor-default">
                                         {skill}
                                     </span>
                                 ))}
+                            </div>
+                        </div>
+
+                        {/* Interview Experiences */}
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center border-b border-gray-100 pb-4">
+                                <Search className="w-5 h-5 mr-2 text-indigo-500" />
+                                Interview Experiences
+                            </h2>
+                            <div className="space-y-4">
+                                {job.experiences && job.experiences.length > 0 ? (
+                                    job.experiences.slice(0, 3).map((exp: any, i: number) => (
+                                        <div key={i} className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                                            <div className="text-sm font-bold text-gray-900 mb-1">{exp.student_name || "Anonymous Student"}</div>
+                                            <div className="text-xs text-blue-600 font-medium mb-2">{exp.role} • {exp.year}</div>
+                                            <p className="text-xs text-gray-600 line-clamp-2 italic">"{exp.content || exp.summary}"</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                                            <Search className="w-6 h-6 text-gray-300" />
+                                        </div>
+                                        <p className="text-sm text-gray-500 font-medium italic">Experiences have not been added yet</p>
+                                    </div>
+                                )}
+                                {job.experiences && job.experiences.length > 3 && (
+                                    <button className="w-full py-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                        View all experiences
+                                    </button>
+                                )}
                             </div>
                         </div>
 

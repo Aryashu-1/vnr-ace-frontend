@@ -1,46 +1,73 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Pencil, Trash2, ArrowLeft, GraduationCap } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowLeft, GraduationCap, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { getDepartments, createOrUpdateDepartment, deleteDepartment } from "@/lib/api"
 
 interface Department {
   id: string
   name: string
   code: string
-  intake: number
+  intake: string
   hod: string
   description: string
 }
 
 export default function DepartmentInfoPage() {
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: "1", name: "Computer Science and Engineering", code: "CSE", intake: 240, hod: "Dr. C. Kiran Mai", description: "The department offers top-tier engineering education with a focus on AI and Data Science." },
-    { id: "2", name: "Information Technology", code: "IT", intake: 180, hod: "Dr. G. Suresh Reddy", description: "Focused on software engineering and network security." },
-  ])
-
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [currentDept, setCurrentDept] = useState<Partial<Department>>({})
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const handleSave = () => {
-    if (isEditing) {
-      setDepartments(departments.map(d => d.id === currentDept.id ? (currentDept as Department) : d))
-    } else {
-      setDepartments([...departments, { ...currentDept, id: Math.random().toString(36).substr(2, 9) } as Department])
+  const fetchDepartments = async () => {
+    setIsLoading(true)
+    try {
+      const data = await getDepartments()
+      setDepartments(data)
+    } catch (error) {
+      console.error("Failed to fetch departments:", error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsEditing(false)
-    setCurrentDept({})
   }
 
-  const handleDelete = (id: string) => {
-    setDepartments(departments.filter(d => d.id !== id))
+  useEffect(() => {
+    fetchDepartments()
+  }, [])
+
+  const handleSave = async () => {
+    if (!currentDept.name || !currentDept.code) {
+      alert("Name and Code are required.")
+      return
+    }
+
+    try {
+      await createOrUpdateDepartment(currentDept, isEditing ? currentDept.id : undefined)
+      setIsDialogOpen(false)
+      fetchDepartments()
+    } catch (error) {
+      console.error("Failed to save department:", error)
+      alert("Error saving department.")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this department?")) return
+    try {
+      await deleteDepartment(id)
+      fetchDepartments()
+    } catch (error) {
+      console.error("Failed to delete department:", error)
+    }
   }
 
   return (
@@ -52,26 +79,26 @@ export default function DepartmentInfoPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-3xl font-bold flex items-center gap-3 text-blue-900">
              Department Information
           </h1>
           <p className="text-muted-foreground">Manage academic departments, intake capacities, and leadership details.</p>
         </div>
       </div>
 
-      <Card>
+      <Card className="border-blue-100">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Departments List</CardTitle>
             <CardDescription>Comprehensive list of college departments and stats.</CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => { setIsEditing(false); setCurrentDept({}); }} className="flex gap-2">
+              <Button onClick={() => { setIsEditing(false); setCurrentDept({}); }} className="bg-blue-600 hover:bg-blue-700 flex gap-2">
                 <Plus className="w-4 h-4" /> Add Department
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{isEditing ? "Edit Department" : "Add New Department"}</DialogTitle>
               </DialogHeader>
@@ -96,9 +123,8 @@ export default function DepartmentInfoPage() {
                   <Label htmlFor="intake">Annual Intake</Label>
                   <Input 
                     id="intake" 
-                    type="number"
                     value={currentDept.intake || ""} 
-                    onChange={(e) => setCurrentDept({...currentDept, intake: parseInt(e.target.value)})}
+                    onChange={(e) => setCurrentDept({...currentDept, intake: e.target.value})}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -120,56 +146,62 @@ export default function DepartmentInfoPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleSave}>Save Department</Button>
+                <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">Save Department</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Intake</TableHead>
-                  <TableHead>HOD</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {departments.map((dept) => (
-                  <TableRow key={dept.id}>
-                    <TableCell className="font-bold">{dept.code}</TableCell>
-                    <TableCell>{dept.name}</TableCell>
-                    <TableCell>{dept.intake}</TableCell>
-                    <TableCell className="italic text-gray-600">{dept.hod}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            onClick={() => { setIsEditing(true); setCurrentDept(dept); }}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        {/* Reuse the DialogContent logic if possible, or just re-render here */}
-                      </Dialog>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-red-500"
-                        onClick={() => handleDelete(dept.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Intake</TableHead>
+                    <TableHead>HOD</TableHead>
+                    <TableHead className="text-right pr-6">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {departments.map((dept) => (
+                    <TableRow key={dept.id}>
+                      <TableCell className="font-bold">{dept.code}</TableCell>
+                      <TableCell>{dept.name}</TableCell>
+                      <TableCell>{dept.intake}</TableCell>
+                      <TableCell className="italic text-gray-600">{dept.hod}</TableCell>
+                      <TableCell className="text-right space-x-2 pr-6">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => { setIsEditing(true); setCurrentDept(dept); setIsDialogOpen(true); }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-red-500"
+                          onClick={() => handleDelete(dept.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {departments.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">No departments found.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </CardContent>
       </Card>

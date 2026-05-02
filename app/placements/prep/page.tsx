@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { PlacementsChatbot } from "@/components/placements-chatbot"
-import { Building2, Search, Briefcase, FileText, ChevronRight, Play, CheckCircle2, ListFilter } from "lucide-react"
+import { Building2, Search, Briefcase, FileText, ChevronRight, Play, CheckCircle2, ListFilter, HelpCircle } from "lucide-react"
 import { startPrepSession } from "@/lib/api"
+import { InterviewExperienceCard } from "@/components/interview-experience-card"
 
 export default function InterviewPrepPage() {
     const [searchQuery, setSearchQuery] = useState("")
@@ -105,36 +106,48 @@ export default function InterviewPrepPage() {
                             </div>
 
                             <div className="space-y-4">
-                                {sessionData.experiences && sessionData.experiences.length > 0 && (
+                                <div className="space-y-6">
                                     <div>
-                                        <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-2">
+                                        <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-3">
                                             <FileText className="w-4 h-4 text-blue-600" /> Interview Experiences
                                         </h4>
-                                        <ul className="space-y-2">
-                                            {sessionData.experiences.map((exp: any, idx: number) => (
-                                                <li key={idx} className="flex gap-2 text-sm text-gray-700 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
-                                                    <ChevronRight className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
-                                                    <span>{typeof exp === 'object' ? (exp.content || exp.experience || JSON.stringify(exp)) : exp}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                        {sessionData.experiences && sessionData.experiences.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {sessionData.experiences.map((exp: any, idx: number) => (
+                                                    <InterviewExperienceCard key={idx} exp={exp} index={idx} />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
+                                                <p className="text-gray-500 text-sm italic font-medium">Experiences have not been added yet</p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
 
-                                {sessionData.questions && sessionData.questions.length > 0 && (
                                     <div>
-                                        <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-2">
-                                            <Building2 className="w-4 h-4 text-orange-600" /> Previous Year Questions
+                                        <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-3">
+                                            <HelpCircle className="w-4 h-4 text-orange-600" /> Previous Year Questions
                                         </h4>
-                                        <div className="grid grid-cols-1 gap-2">
-                                             {sessionData.questions.map((q: any, idx: number) => (
-                                                <div key={idx} className="bg-orange-50/50 border border-orange-100 p-3 rounded-lg text-sm text-gray-800 font-medium">
-                                                    Q{idx + 1}. {typeof q === 'object' ? q.question || q.content : q}
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {sessionData.questions && sessionData.questions.length > 0 ? (
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {sessionData.questions.map((q: any, idx: number) => (
+                                                    <div key={idx} className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-all flex gap-3 group">
+                                                        <span className="text-orange-500 font-bold text-sm bg-orange-50 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors">
+                                                            {idx + 1}
+                                                        </span>
+                                                        <p className="text-sm text-gray-800 font-medium leading-relaxed pt-1.5">
+                                                            {typeof q === 'object' ? q.question || q.content : q}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
+                                                <p className="text-gray-500 text-sm italic font-medium">Previous year questions have not been added yet</p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     )}

@@ -167,10 +167,11 @@ export function ResumeFeedbackPanel({
       </div>
 
       <Tabs defaultValue="analysis" className="mt-6">
-        <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-slate-100/50 p-1">
+        <TabsList className="grid w-full grid-cols-4 rounded-2xl bg-slate-100/50 p-1">
           <TabsTrigger value="analysis" className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">Analysis</TabsTrigger>
           <TabsTrigger value="suggestions" className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">Suggestions</TabsTrigger>
           <TabsTrigger value="improve" className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">AI Actions</TabsTrigger>
+          <TabsTrigger value="raw" className="rounded-xl py-2.5 text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">Raw</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analysis" className="mt-6 space-y-6 outline-none">
@@ -253,6 +254,13 @@ export function ResumeFeedbackPanel({
               </p>
             </div>
           )}
+        </TabsContent>
+        <TabsContent value="raw" className="mt-6 space-y-6 outline-none">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-900 p-5 shadow-inner overflow-auto max-h-[500px]">
+             <pre className="text-[10px] text-emerald-400 font-mono leading-tight whitespace-pre">
+               {JSON.stringify(analysis, null, 2)}
+             </pre>
+          </div>
         </TabsContent>
       </Tabs>
     </aside>

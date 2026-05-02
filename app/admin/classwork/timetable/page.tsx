@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Pencil, Trash2, ArrowLeft, CalendarDays, Clock, MapPin } from "lucide-react"
+import { Plus, Pencil, Trash2, ArrowLeft, CalendarDays, Clock, MapPin, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { getTimetable, createOrUpdateTimetable, deleteTimetableEntry } from "@/lib/api"
 
 interface TimetableEntry {
   id: string
@@ -32,11 +33,8 @@ const emptyEntry = {
 }
 
 export default function TimetableManagementPage() {
-  const [entries, setEntries] = useState<TimetableEntry[]>([
-    { id: "1", day: "Monday", startTime: "09:00 AM", endTime: "10:00 AM", subject: "Discrete Mathematics", room: "B-201", faculty: "S. Rama Rao", section: "CSE-A" },
-    { id: "2", day: "Monday", startTime: "10:00 AM", endTime: "11:00 AM", subject: "Operating Systems", room: "B-305", faculty: "P. Vinay Kumar", section: "CSE-A" },
-    { id: "3", day: "Tuesday", startTime: "11:15 AM", endTime: "12:15 PM", subject: "Database Management", room: "D-102", faculty: "L. Swathi", section: "CSE-B" },
-  ])
+  const [entries, setEntries] = useState<TimetableEntry[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState("Monday")
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -44,7 +42,22 @@ export default function TimetableManagementPage() {
   const [form, setForm] = useState(emptyEntry)
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  const visibleEntries = entries.filter((entry) => entry.day === selectedDay)
+
+  const fetchTimetable = async () => {
+    setIsLoading(true)
+    try {
+      const data = await getTimetable(selectedDay)
+      setEntries(data)
+    } catch (error) {
+      console.error("Failed to fetch timetable:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTimetable()
+  }, [selectedDay])
 
   const resetEditor = () => {
     setForm(emptyEntry)
@@ -60,7 +73,7 @@ export default function TimetableManagementPage() {
     setForm({ ...emptyEntry, day: selectedDay })
     setEditingId(null)
     setIsEditorOpen(true)
-    setMessage("Timetable changes are editable locally on this admin screen. Backend save wiring can be added once the schedule API is available.")
+    setMessage(null)
   }
 
   const openEditEditor = (entry: TimetableEntry) => {
@@ -75,41 +88,43 @@ export default function TimetableManagementPage() {
     })
     setEditingId(entry.id)
     setIsEditorOpen(true)
-    setMessage("Editing is now enabled locally for timetable rows.")
+    setMessage(null)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.subject.trim() || !form.faculty.trim() || !form.startTime.trim() || !form.endTime.trim()) {
-      setMessage("Day, time, subject, and faculty are required to save a timetable row.")
+      alert("All fields are required.")
       return
     }
 
-    const nextEntry: TimetableEntry = {
-      id: editingId ?? `${Date.now()}`,
+    const payload = {
       day: form.day,
-      startTime: form.startTime.trim(),
-      endTime: form.endTime.trim(),
+      start_time: form.startTime.trim(),
+      end_time: form.endTime.trim(),
       subject: form.subject.trim(),
-      room: form.room.trim() || "TBD",
+      room: form.room.trim(),
       faculty: form.faculty.trim(),
-      section: form.section.trim().toUpperCase() || "TBD",
+      section: form.section.trim().toUpperCase(),
     }
 
-    setEntries((prev) => (
-      editingId
-        ? prev.map((entry) => entry.id === editingId ? nextEntry : entry)
-        : [...prev, nextEntry]
-    ))
-
-    setSelectedDay(nextEntry.day)
-    setMessage(editingId ? "Timetable row updated locally." : "Timetable row added locally.")
-    resetEditor()
+    try {
+      await createOrUpdateTimetable(payload, editingId || undefined)
+      setMessage(editingId ? "Timetable entry updated." : "Timetable entry added.")
+      resetEditor()
+      fetchTimetable()
+    } catch (error) {
+      console.error("Failed to save timetable entry:", error)
+      alert("Error saving entry.")
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setEntries((prev) => prev.filter((entry) => entry.id !== id))
-    if (editingId === id) {
-      resetEditor()
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure?")) return
+    try {
+      await deleteTimetableEntry(id)
+      fetchTimetable()
+    } catch (error) {
+      console.error("Failed to delete entry:", error)
     }
   }
 
@@ -122,7 +137,7 @@ export default function TimetableManagementPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-purple-900">
             <CalendarDays className="w-8 h-8 text-purple-600" /> Timetable Management
           </h1>
           <p className="text-muted-foreground">Schedule classes, assign rooms, and manage faculty hours.</p>
@@ -159,7 +174,7 @@ export default function TimetableManagementPage() {
         <Card className="border-purple-100 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle>{editingId ? "Edit Schedule" : "Add Schedule"}</CardTitle>
-            <CardDescription>Manage one timetable slot at a time and preview the result instantly in the table below.</CardDescription>
+            <CardDescription>Manage class slots and update the central database.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -196,98 +211,103 @@ export default function TimetableManagementPage() {
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={resetEditor}>Cancel</Button>
-              <Button onClick={handleSave}>{editingId ? "Save Changes" : "Add Schedule"}</Button>
+              <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700">Save Changes</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card>
+      <Card className="border-purple-50 shadow-md">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Day</TableHead>
-                <TableHead className="w-[200px]">Time Slot</TableHead>
-                <TableHead>Subject & Faculty</TableHead>
-                <TableHead className="text-center">Section</TableHead>
-                <TableHead className="text-center">Room</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visibleEntries.map((entry) => (
-                <TableRow key={entry.id} className="group">
-                  <TableCell className="font-bold text-gray-700">{entry.day}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
-                      {entry.startTime} - {entry.endTime}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-semibold">{entry.subject}</p>
-                      <p className="text-xs text-muted-foreground italic">By {entry.faculty}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="secondary">{entry.section}</Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1.5 text-sm text-gray-600">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      {entry.room}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right space-x-1 opacity-10 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => openEditEditor(entry)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDelete(entry.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {visibleEntries.length === 0 && (
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-purple-50/30">
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                    No schedule entries added for {selectedDay} yet.
-                  </TableCell>
+                  <TableHead className="w-[100px] pl-6 font-bold">Day</TableHead>
+                  <TableHead className="w-[200px] font-bold">Time Slot</TableHead>
+                  <TableHead className="font-bold">Subject & Faculty</TableHead>
+                  <TableHead className="text-center font-bold">Section</TableHead>
+                  <TableHead className="text-center font-bold">Room</TableHead>
+                  <TableHead className="text-right pr-6 font-bold">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {entries.map((entry) => (
+                  <TableRow key={entry.id} className="group hover:bg-purple-50/10">
+                    <TableCell className="font-bold text-gray-700 pl-6">{entry.day}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        {entry.startTime} - {entry.endTime}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold">{entry.subject}</p>
+                        <p className="text-xs text-muted-foreground italic">By {entry.faculty}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">{entry.section}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-sm text-gray-600">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                        {entry.room}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1 pr-6">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => openEditEditor(entry)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => handleDelete(entry.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {entries.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-40 text-center text-muted-foreground italic">
+                      No schedule entries found for {selectedDay}.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-purple-50/50 border-purple-100">
+        <Card className="bg-purple-50/50 border-purple-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Total Classes</CardTitle>
+            <CardTitle className="text-sm font-medium text-purple-800 uppercase tracking-wider">Total Weekly Classes</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-purple-700">{entries.length}</p>
-            <p className="text-xs text-purple-600/80 mt-1">Entries currently managed on this screen</p>
+            <p className="text-xs text-purple-600/80 mt-1">Active entries in database</p>
           </CardContent>
         </Card>
-        <Card className="bg-emerald-50/50 border-emerald-100">
+        <Card className="bg-emerald-50/50 border-emerald-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-800">Room Utilization</CardTitle>
+            <CardTitle className="text-sm font-medium text-emerald-800 uppercase tracking-wider">Day Specific Slots</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-emerald-700">{Math.min(100, entries.length * 12)}%</p>
-            <p className="text-xs text-emerald-600/80 mt-1">Estimated from visible schedule density</p>
+            <p className="text-3xl font-bold text-emerald-700">{entries.filter(e => e.day === selectedDay).length}</p>
+            <p className="text-xs text-emerald-600/80 mt-1">Scheduled for {selectedDay}</p>
           </CardContent>
         </Card>
-        <Card className="bg-amber-50/50 border-amber-100">
+        <Card className="bg-amber-50/50 border-amber-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-amber-800">Selected Day Entries</CardTitle>
+            <CardTitle className="text-sm font-medium text-amber-800 uppercase tracking-wider">Room Utilization</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-amber-700">{visibleEntries.length}</p>
-            <p className="text-xs text-amber-600/80 mt-1">Quick view for {selectedDay}</p>
+            <p className="text-3xl font-bold text-amber-700">{new Set(entries.map(e => e.room)).size}</p>
+            <p className="text-xs text-amber-600/80 mt-1">Unique rooms assigned</p>
           </CardContent>
         </Card>
       </div>

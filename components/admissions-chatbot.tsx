@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send } from "lucide-react"
 import { sendAdmissionsChat } from "@/lib/api"
 import { useErrorHandler } from "@/hooks/use-error-handler"
+import { MarkdownText } from "./markdown-text"
 
 interface Message {
   id: string
@@ -90,7 +91,11 @@ export function AdmissionsChatbot() {
                   : "bg-gray-100 text-gray-900 rounded-bl-none"
                 }`}
             >
-              <p>{message.content}</p>
+              {message.role === "assistant" ? (
+                <MarkdownText text={message.content} />
+              ) : (
+                <p>{message.content}</p>
+              )}
             </div>
           </div>
         ))}

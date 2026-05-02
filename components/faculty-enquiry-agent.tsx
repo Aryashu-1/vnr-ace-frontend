@@ -3,6 +3,7 @@
 import { Search, Send, User, Loader2, Code, Terminal } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { sendFacultyEnquiry } from "@/lib/api"
+import { MarkdownText } from "./markdown-text"
 
 interface Message {
   role: 'user' | 'ai'
@@ -58,7 +59,11 @@ export function FacultyEnquiryAgent() {
           {messages.map((m, i) => (
             <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'}`}>
-                {m.content}
+                {m.role === 'ai' ? (
+                  <MarkdownText text={m.content} />
+                ) : (
+                  m.content
+                )}
               </div>
               {m.sql && (
                 <div className="mt-1.5 w-full max-w-[85%]">
@@ -115,7 +120,11 @@ export function FacultyEnquiryAgent() {
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <h3 className="font-bold text-gray-900 text-sm mb-3">Recent Enquiries</h3>
           <div className="space-y-2">
-            {['CSE HOD availability', 'Room 302 schedule', 'Dr. Ram’s cabin'].map(q => (
+            {[
+              "What is the schedule for Ms. Sana Inayath on Monday?",
+              "Where is Dr. S. Appa Rao on Saturday?",
+              "What is the venue for Engineering Chemistry (CE-A)?"
+            ].map(q => (
               <button key={q} onClick={() => setInput(q)} className="w-full text-left text-xs text-gray-600 p-2 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-all font-inter">
                 "{q}"
               </button>

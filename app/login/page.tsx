@@ -26,13 +26,12 @@ export default function LoginPage() {
             console.log("Calling authProvider.login...")
             const user = await login(username, password)
             if (user) {
-                // If a specific redirect is requested via URL, respect it
+                // ... successful login logic ...
                 if (searchParams.get("redirect")) {
                     router.push(searchParams.get("redirect")!)
                     return
                 }
 
-                // Otherwise, redirect based on role
                 switch (user.role) {
                     case "faculty":
                         router.push("/classwork")
@@ -47,11 +46,18 @@ export default function LoginPage() {
                     default:
                         router.push("/dashboard")
                 }
-            } else {
-                setError("Invalid credentials. Try 'student', 'faculty', or 'admin'.")
             }
         } catch (err: any) {
-            setError(err instanceof Error ? err.message : "An error occurred during login.")
+            console.error("Login page caught error:", err)
+            // Handle specialized ApiError if available
+            const message = err.message || "An unexpected error occurred."
+            if (message.toLowerCase().includes("invalid credentials")) {
+                setError("Invalid email or password. Please try again.")
+            } else if (message.toLowerCase().includes("not found")) {
+                setError("User account not found.")
+            } else {
+                setError(message)
+            }
         } finally {
             setIsSubmitting(false)
         }

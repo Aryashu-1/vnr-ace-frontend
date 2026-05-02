@@ -33,18 +33,8 @@ export default function PlacementsPage() {
       link: "/placements/prep",
     },
     {
-      id: 3,
-      title: "Placement Tracking",
-      description: "Track your applications, interviews, and offer status in real-time",
-      icon: TrendingUp,
-      color: "bg-green-100",
-      iconColor: "text-green-600",
-      button: "Track Applications",
-      link: "/placements/dashboard", // Assuming tracking is part of main dashboard for now
-    },
-    {
       id: 4,
-      title: "Shortlisting Info",
+      title: "Shortlisting Agent",
       description: "Check eligibility and shortlisting status for different drives",
       icon: Zap,
       color: "bg-orange-100",
@@ -99,12 +89,12 @@ export default function PlacementsPage() {
   // Filter cards based on role
   const visibleCards = prepCards.filter(card => {
     // Student: Hide Shortlisting Info
-    if (user.role === 'student' && card.title === "Shortlisting Info") {
+    if (user.role === 'student' && card.title === "Shortlisting Agent") {
       return false
     }
 
-    // Faculty: Show ONLY Placement Tracking and Analytics
-    if (user.role === 'faculty' && !(card.title === "Placement Tracking" || card.title === "Placement Analytics Dashboard")) {
+    // Faculty: Show ONLY Analytics
+    if (user.role === 'faculty' && card.title !== "Placement Analytics Dashboard") {
       return false
     }
 

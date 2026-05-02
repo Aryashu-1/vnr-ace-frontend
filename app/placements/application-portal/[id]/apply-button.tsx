@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from "react"
-import { Send, UploadCloud, File, CheckCircle2, Edit2, XCircle, Clock, AlertTriangle, ExternalLink } from "lucide-react"
+import { Send, UploadCloud, File, CheckCircle2, Edit2, XCircle, Clock, AlertTriangle, ExternalLink, AlertCircle } from "lucide-react"
+import { applyForJob, withdrawApplication } from "@/lib/api"
 import {
     Dialog,
     DialogContent,
@@ -25,37 +26,49 @@ import {
 import { JobOpportunity } from "../data"
 
 export function ApplyButton({ job }: { job: JobOpportunity }) {
-    const [isApplied, setIsApplied] = useState(job.status === 'Applied')
+    const [isApplied, setIsApplied] = useState(job.status?.toLowerCase() === 'applied')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     // Modals for editing/withdrawing
     const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false)
     const [isWithdrawConfirmOpen, setIsWithdrawConfirmOpen] = useState(false)
 
     // Simulate backend deadline check. For Demo, allow if editDeadline is set
-    const canEditOrWithdraw = job.editDeadline ? true : job.status === 'Open';
+    const canEditOrWithdraw = job.editDeadline ? true : job.status?.toLowerCase() === 'open';
 
-    const handleApply = (e: React.FormEvent) => {
+    const handleApply = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!selectedFile) return
 
         setIsSubmitting(true)
-        // Simulate API call
-        setTimeout(() => {
-            setIsSubmitting(false)
-            setIsApplied(true)
-            setIsOpen(false)
-            setIsEditConfirmOpen(false) // just in case it was opened from Edit
-        }, 1500)
+        setError(null)
+        
+        try {
+            await applyForJob(job.id);
+            setIsApplied(true);
+            setIsOpen(false);
+            setIsEditConfirmOpen(false);
+        } catch (err: any) {
+            const msg = err.response?.data?.detail || "Failed to apply. Please try again.";
+            setError(msg);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
-    const handleWithdraw = () => {
-        // Simulate API withdraw action
-        setIsWithdrawConfirmOpen(false)
-        setIsApplied(false)
-        setSelectedFile(null)
+    const handleWithdraw = async () => {
+        try {
+            await withdrawApplication(job.id);
+            setIsApplied(false);
+            setSelectedFile(null);
+        } catch (err: any) {
+            alert(err.response?.data?.detail || "Failed to withdraw");
+        } finally {
+            setIsWithdrawConfirmOpen(false);
+        }
     }
 
     const openEditModal = () => {
@@ -63,7 +76,7 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
         setIsOpen(true)
     }
 
-    if (job.status === 'Closed') {
+    if (job.status?.toLowerCase() === 'closed') {
         return (
             <button disabled className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed">
                 Closed
@@ -156,6 +169,7 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
                         setSelectedFile={setSelectedFile}
                         isSubmitting={isSubmitting}
                         isEditing={true}
+                        error={error}
                     />
                 )}
             </div>
@@ -198,17 +212,18 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
                 setSelectedFile={setSelectedFile}
                 isSubmitting={isSubmitting}
                 isEditing={false}
+                error={error}
             />
         </>
     )
 }
 
 function ApplicationModal({
-    isOpen, setIsOpen, job, handleApply, selectedFile, setSelectedFile, isSubmitting, isEditing
+    isOpen, setIsOpen, job, handleApply, selectedFile, setSelectedFile, isSubmitting, isEditing, error
 }: any) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Update Resume for' : 'Apply for'} {job.role}</DialogTitle>
                     <DialogDescription>
@@ -220,6 +235,12 @@ function ApplicationModal({
                 </DialogHeader>
 
                 <form onSubmit={handleApply} className="space-y-6 py-4">
+                    {error && (
+                        <div className="bg-red-50 border border-red-100 rounded-lg p-4 text-sm text-red-800 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                            <p>{error}</p>
+                        </div>
+                    )}
                     {/* Instructions Box */}
                     {job.instructions && job.instructions.length > 0 && (
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800 space-y-2">

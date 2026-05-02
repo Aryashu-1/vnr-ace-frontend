@@ -65,10 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const extendedDetails = mockUserKey ? mockUsers[mockUserKey] : ({} as Partial<User>)
 
                 const authenticatedUser: User = {
-                    ...extendedDetails, // Spread mock details first
-                    ...apiUser, // Override with real API data (id, email, role)
-                    name: apiUser.name || (apiUser.email.split('@')[0]), // Fallback if name missing
-                    avatar: extendedDetails.avatar || apiUser.email[0].toUpperCase(),
+                    ...extendedDetails, // Spread mock details for non-essential fields (dept, etc)
+                    ...apiUser, // Override with real API data (id, email, role, name)
+                    name: apiUser.name || extendedDetails.name || (apiUser.email.split('@')[0]),
+                    avatar: extendedDetails.avatar || apiUser.name?.[0]?.toUpperCase() || apiUser.email[0].toUpperCase(),
                 }
 
                 setUser(authenticatedUser)

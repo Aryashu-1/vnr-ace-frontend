@@ -150,9 +150,14 @@ export default function PlacementsPolicyPage() {
                                 Contact the Training & Placement Cell for clarifications regarding any policy.
                             </p>
                         </div>
-                        <button className="px-8 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors">
+                        <a 
+                            href="https://vnrvjiet.ac.in/training-placement/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-8 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors inline-block text-center"
+                        >
                             Contact Placement Cell
-                        </button>
+                        </a>
                     </div>
                 </div>
 

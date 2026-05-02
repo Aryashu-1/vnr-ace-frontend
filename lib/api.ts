@@ -169,10 +169,14 @@ export const sendAdmissionsChat = (message: string, thread_id?: string) =>
     });
 
 // Classwork Agents
-export const sendEmailAutomation = (message: string, approval?: string) =>
+export const sendEmailAutomation = (
+    message: string, 
+    approval?: string, 
+    overrides?: { recipients?: string[], subject?: string, body?: string }
+) =>
     fetchFromApi("/classwork/email-automation", {
         method: "POST",
-        body: JSON.stringify({ message, approval }),
+        body: JSON.stringify({ message, approval, ...overrides }),
     });
 
 export const sendFacultyEnquiry = (message: string) =>
@@ -309,6 +313,14 @@ export const improveResumeEditor = (resumeId: string, payload: Record<string, an
         body: JSON.stringify(payload),
     });
 
+export const improveAllResumeEditor = (resumeId: string) =>
+    fetchFromApi(`/placements/resume/${resumeId}/improve-all`, {
+        method: "POST",
+    });
+
+export const getResumeLatex = (resumeId: string) =>
+    fetchFromApi(`/placements/resume/${resumeId}/latex`);
+
 export const reanalyzeResumeEditor = (resumeId: string, payload: Record<string, any> = {}) =>
     fetchFromApi(`/placements/resume/${resumeId}/reanalyze`, {
         method: "POST",
@@ -345,3 +357,209 @@ export const sendPrepChat = (session_id: string, message: string) =>
     });
 
 // AI SQL Engine
+
+// --- APPLICATION PORTAL APIs ---
+
+export interface JobListing {
+    id: string;
+    role: string;
+    company_name: string;
+    ctc: number | null;
+    external_registration_url?: string | null;
+    requires_external_registration: boolean;
+    is_registered_externally: boolean;
+    status: string; // "not_applied", "applied", "shortlisted", "placed", "rejected", "withdrawn"
+    location?: string;
+    deadline?: string;
+    tags?: string[];
+    description?: string;
+    criteria?: any;
+    skills?: string[];
+    examRounds?: any[];
+    instructions?: string[];
+    experiences?: any[];
+}
+
+export const getJobListings = (): Promise<JobListing[]> => fetchFromApi("/placements/jobs");
+
+export const getJobDetail = (jobId: string): Promise<JobListing> => fetchFromApi(`/placements/jobs/${jobId}`);
+
+export const applyForJob = (jobId: string) =>
+    fetchFromApi(`/placements/apply/${jobId}`, {
+        method: "POST"
+    });
+
+export const withdrawApplication = (jobId: string) =>
+    fetchFromApi(`/placements/withdraw/${jobId}`, {
+        method: "POST"
+    });
+
+export const getMyApplications = () => fetchFromApi("/placements/my-applications");
+
+export const getPlacementPolicies = () => fetchFromApi("/placements/policies");
+
+export const verifyExternalRegistration = (jobId: string, payload: { external_registration_id?: string, confirmation_screenshot_url?: string }) =>
+    fetchFromApi(`/placements/jobs/${jobId}/verify-external-registration`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+
+// --- ADMIN PLACEMENT APIs ---
+
+export const getAdminCompanies = () => fetchFromApi("/admin/placements/companies");
+
+export const createOrUpdateAdminCompany = (payload: any, companyId?: string) => {
+    const url = companyId ? `/admin/placements/companies?company_id=${companyId}` : "/admin/placements/companies";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteAdminCompany = (companyId: string) =>
+    fetchFromApi(`/admin/placements/companies/${companyId}`, {
+        method: "DELETE"
+    });
+
+export const getAdminJobs = () => fetchFromApi("/admin/placements/jobs");
+
+export const createOrUpdateAdminJob = (payload: any, jobId?: string) => {
+    const url = jobId ? `/admin/placements/jobs?job_id=${jobId}` : "/admin/placements/jobs";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteAdminJob = (jobId: string) =>
+    fetchFromApi(`/admin/placements/jobs/${jobId}`, {
+        method: "DELETE"
+    });
+
+export const getAdminApplications = () => fetchFromApi("/admin/placements/applications");
+
+// --- ADMISSIONS APIs ---
+
+export const getFaqs = (category?: string) => {
+    const query = category ? `?category=${category}` : "";
+    return fetchFromApi(`/admissions/faqs${query}`);
+};
+
+export const createOrUpdateFaq = (payload: any, faqId?: string) => {
+    const url = faqId ? `/admissions/faqs?faq_id=${faqId}` : "/admissions/faqs";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteFaq = (faqId: string) =>
+    fetchFromApi(`/admissions/faqs/${faqId}`, {
+        method: "DELETE"
+    });
+
+export const getDepartments = () => fetchFromApi("/admissions/departments");
+
+export const createOrUpdateDepartment = (payload: any, deptId?: string) => {
+    const url = deptId ? `/admissions/departments?dept_id=${deptId}` : "/admissions/departments";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteDepartment = (deptId: string) =>
+    fetchFromApi(`/admissions/departments/${deptId}`, {
+        method: "DELETE"
+    });
+
+export const getResumeRules = () => fetchFromApi("/admin/resume-rules");
+
+export const createOrUpdateResumeRule = (payload: any, ruleId?: string) => {
+    const url = ruleId ? `/admin/resume-rules/${ruleId}` : "/admin/resume-rules";
+    return fetchFromApi(url, {
+        method: ruleId ? "PUT" : "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteResumeRule = (ruleId: string) =>
+    fetchFromApi(`/admin/resume-rules/${ruleId}`, {
+        method: "DELETE"
+    });
+
+export const updateResumeSettings = (threshold: number) =>
+    fetchFromApi("/admin/resume-rules/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ threshold })
+    });
+
+export const getInterviewExperiences = () => fetchFromApi("/admin/experiences");
+
+export const createOrUpdateExperience = (payload: any, expId?: string) => {
+    const url = expId ? `/admin/experiences/${expId}` : "/admin/experiences";
+    return fetchFromApi(url, {
+        method: expId ? "PUT" : "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteExperience = (expId: string) =>
+    fetchFromApi(`/admin/experiences/${expId}`, {
+        method: "DELETE"
+    });
+
+export const getAdminStudents = (search?: string) => {
+    const url = search ? `/admin/students?search=${search}` : "/admin/students";
+    return fetchFromApi(url);
+};
+
+export const createOrUpdateStudent = (payload: any, studentId?: string) => {
+    const url = studentId ? `/admin/students?student_id=${studentId}` : "/admin/students";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteStudent = (studentId: string) =>
+    fetchFromApi(`/admin/students/${studentId}`, {
+        method: "DELETE"
+    });
+
+export const getTimetable = (day?: string, section?: string) => {
+    let url = "/admin/timetable";
+    const params = [];
+    if (day) params.push(`day=${day}`);
+    if (section) params.push(`section=${section}`);
+    if (params.length) url += `?${params.join("&")}`;
+    return fetchFromApi(url);
+};
+
+export const createOrUpdateTimetable = (payload: any, entryId?: string) => {
+    const url = entryId ? `/admin/timetable?entry_id=${entryId}` : "/admin/timetable";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteTimetableEntry = (entryId: string) =>
+    fetchFromApi(`/admin/timetable/${entryId}`, {
+        method: "DELETE"
+    });
+
+export const getEmailTemplates = () => fetchFromApi("/admin/mail-agent/templates");
+
+export const createOrUpdateEmailTemplate = (payload: any, templateId?: string) => {
+    const url = templateId ? `/admin/mail-agent/templates?template_id=${templateId}` : "/admin/mail-agent/templates";
+    return fetchFromApi(url, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+};
+
+export const deleteEmailTemplate = (templateId: string) =>
+    fetchFromApi(`/admin/mail-agent/templates/${templateId}`, {
+        method: "DELETE"
+    });

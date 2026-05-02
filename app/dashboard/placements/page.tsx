@@ -106,40 +106,17 @@ export default function PlacementsDashboard() {
                     </p>
                 </div>
 
-                {isStaff && (
-                    <div className="flex items-center gap-3">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                    <Download className="w-4 h-4" />
-                                    Export
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                <DropdownMenuItem onClick={() => handleExport("csv")} className="gap-2 cursor-pointer">
-                                    <FileText className="w-4 h-4 text-slate-500" /> Export CSV (Students)
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExport("excel")} className="gap-2 cursor-pointer">
-                                    <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Export Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExport("pdf")} className="gap-2 cursor-pointer">
-                                    <Download className="w-4 h-4 text-rose-500" /> Export PDF Dashboard
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                )}
             </div>
 
             <div className="p-6 max-w-7xl mx-auto space-y-8 mt-4">
                 {stats && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <KpiCard title="Total Eligible Students" value={getStatValue(stats, ["total", "total eligible students", "eligible students"])} icon={<Users className="w-6 h-6" />} delay={0.1} />
-                        <KpiCard title="Placed Students" value={getStatValue(stats, ["placed", "placed students"])} icon={<UserCheck className="w-6 h-6" />} trend={5.2} delay={0.2} />
-                        <KpiCard title="Placement %" value={`${getStatValue(stats, ["percentage", "placement %", "placement percentage"])}%`} icon={<Percent className="w-6 h-6" />} trend={2.1} delay={0.3} />
-                        <KpiCard title="Highest Salary" value={`Rs ${getStatValue(stats, ["highest", "highest salary"])} LPA`} icon={<TrendingUp className="w-6 h-6" />} trend={15} delay={0.4} />
-                        <KpiCard title="Average Salary" value={`Rs ${getStatValue(stats, ["average", "average salary"])} LPA`} icon={<IndianRupee className="w-6 h-6" />} trend={8.5} delay={0.5} />
-                        <KpiCard title="Unplaced Students" value={getStatValue(stats, ["unplaced", "unplaced students"])} icon={<UsersRound className="w-6 h-6" />} trend={-12} delay={0.6} />
+                        <KpiCard title="Placed Students" value={getStatValue(stats, ["placed", "placed students"])} icon={<UserCheck className="w-6 h-6" />} delay={0.2} />
+                        <KpiCard title="Placement %" value={`${getStatValue(stats, ["percentage", "placement %", "placement percentage"])}%`} icon={<Percent className="w-6 h-6" />} delay={0.3} />
+                        <KpiCard title="Highest Salary" value={`Rs ${getStatValue(stats, ["highest", "highest salary"])} LPA`} icon={<TrendingUp className="w-6 h-6" />} delay={0.4} />
+                        <KpiCard title="Average Salary" value={`Rs ${getStatValue(stats, ["average", "average salary"])} LPA`} icon={<IndianRupee className="w-6 h-6" />} delay={0.5} />
+                        <KpiCard title="Unplaced Students" value={getStatValue(stats, ["unplaced", "unplaced students"])} icon={<UsersRound className="w-6 h-6" />} delay={0.6} />
                     </div>
                 )}
 

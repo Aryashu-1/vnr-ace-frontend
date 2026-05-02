@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Pencil, Trash2, Search, ArrowLeft } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { getFaqs, createOrUpdateFaq, deleteFaq } from "@/lib/api"
 
 interface FAQ {
   id: string
@@ -19,32 +20,58 @@ interface FAQ {
 }
 
 export default function ManageFAQsPage() {
-  const [faqs, setFaqs] = useState<FAQ[]>([
-    { id: "1", question: "What are the eligibility criteria for B.Tech?", answer: "Candidates must have passed 10+2 with Physics, Chemistry, and Mathematics.", category: "Eligibility" },
-    { id: "2", question: "What is the application fee?", answer: "The application fee is ₹1000 for General category students.", category: "General" },
-  ])
-
+  const [faqs, setFaqs] = useState<FAQ[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isEditing, setIsEditing] = useState(false)
   const [currentFAQ, setCurrentFAQ] = useState<Partial<FAQ>>({})
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const filteredFaqs = faqs.filter(f => 
-    f.question.toLowerCase().includes(search.toLowerCase()) || 
-    f.category.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const handleSave = () => {
-    if (isEditing) {
-      setFaqs(faqs.map(f => f.id === currentFAQ.id ? (currentFAQ as FAQ) : f))
-    } else {
-      setFaqs([...faqs, { ...currentFAQ, id: Math.random().toString(36).substr(2, 9) } as FAQ])
+  const fetchFaqs = async () => {
+    setIsLoading(true)
+    try {
+      const data = await getFaqs()
+      setFaqs(data)
+    } catch (error) {
+      console.error("Failed to fetch FAQs:", error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsEditing(false)
-    setCurrentFAQ({})
   }
 
-  const handleDelete = (id: string) => {
-    setFaqs(faqs.filter(f => f.id !== id))
+  useEffect(() => {
+    fetchFaqs()
+  }, [])
+
+  const filteredFaqs = faqs.filter(f => 
+    (f.question?.toLowerCase() || "").includes(search.toLowerCase()) || 
+    (f.category?.toLowerCase() || "").includes(search.toLowerCase())
+  )
+
+  const handleSave = async () => {
+    if (!currentFAQ.question || !currentFAQ.answer || !currentFAQ.category) {
+      alert("Please fill in all fields.")
+      return
+    }
+
+    try {
+      await createOrUpdateFaq(currentFAQ, isEditing ? currentFAQ.id : undefined)
+      setIsDialogOpen(false)
+      fetchFaqs()
+    } catch (error) {
+      console.error("Failed to save FAQ:", error)
+      alert("Error saving FAQ.")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return
+    try {
+      await deleteFaq(id)
+      fetchFaqs()
+    } catch (error) {
+      console.error("Failed to delete FAQ:", error)
+    }
   }
 
   return (
@@ -72,7 +99,7 @@ export default function ManageFAQsPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => { setIsEditing(false); setCurrentFAQ({}); }} className="flex gap-2">
                 <Plus className="w-4 h-4" /> Add FAQ
@@ -118,61 +145,62 @@ export default function ManageFAQsPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[150px]">Category</TableHead>
-                  <TableHead>Question</TableHead>
-                  <TableHead className="hidden md:table-cell">Answer</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredFaqs.length > 0 ? (
-                  filteredFaqs.map((faq) => (
-                    <TableRow key={faq.id}>
-                      <TableCell className="font-medium whitespace-nowrap">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                          {faq.category}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">{faq.question}</TableCell>
-                      <TableCell className="hidden md:table-cell max-w-[300px] truncate text-muted-foreground italic">
-                        {faq.answer}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => { setIsEditing(true); setCurrentFAQ(faq); }}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          {/* Use the same DialogContent as above */}
-                        </Dialog>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(faq.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[150px]">Category</TableHead>
+                    <TableHead>Question</TableHead>
+                    <TableHead className="hidden md:table-cell">Answer</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFaqs.length > 0 ? (
+                    filteredFaqs.map((faq) => (
+                      <TableRow key={faq.id}>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                            {faq.category}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">{faq.question}</TableCell>
+                        <TableCell className="hidden md:table-cell max-w-[300px] truncate text-muted-foreground italic">
+                          {faq.answer}
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => { setIsEditing(true); setCurrentFAQ(faq); setIsDialogOpen(true); }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(faq.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        No results found.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      No results found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </CardContent>
       </Card>
