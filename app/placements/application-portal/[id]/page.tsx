@@ -20,33 +20,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     const { id } = React.use(params);
     const { getJobById, isLoading: isContextLoading } = usePlacements();
     const [job, setJob] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchJob = async () => {
-            const cachedJob = getJobById(id);
-            if (cachedJob) {
-                setJob(cachedJob);
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                const found = await getJobDetail(id);
-                setJob(found);
-            } catch (error) {
-                console.error("Error fetching job details:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        
         if (!isContextLoading) {
-            fetchJob();
+            const found = getJobById(id);
+            setJob(found);
         }
     }, [id, getJobById, isContextLoading]);
 
-    if (isLoading) {
+    if (isContextLoading || (id && !job)) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -58,26 +40,29 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
         return <div className="p-8 text-center">Job not found or has been closed.</div>
     }
 
-    // --- Hardcoded Fallbacks for incomplete DB records ---
+    // --- Hardcoded Fallbacks for incomplete DB records (Dynamic based on company) ---
+    const companyName = job.company_name || "Enterprise";
+    const jobRole = job.role || "Software Engineer";
+
     const fallbackData = {
-        description: "Google is looking for Software Development Engineers to join our core engineering teams. You will work on massive-scale distributed systems, build sophisticated web applications, and solve complex algorithms to improve the lives of billions of users. We value clean code, systematic testing, and innovative problem-solving.",
+        description: `${companyName} is seeking a talented ${jobRole} to join our innovative team. In this role, you will collaborate with cross-functional teams to design, develop, and maintain high-quality software solutions. We are looking for individuals who are passionate about technology, possess strong problem-solving skills, and are eager to contribute to our mission of delivering excellence to our global clients.`,
         instructions: [
-            "Submit your updated resume in PDF format.",
-            "Ensure your GitHub and LinkedIn profiles are linked in the resume.",
-            "Prepare for 3 rounds of technical interviews focusing on DSA and System Design."
+            `Submit your professional resume highlighting relevant ${jobRole} experience.`,
+            "Include links to your portfolio, GitHub, or any notable projects.",
+            `Prepare for a rigorous selection process at ${companyName}, including technical and behavioral assessments.`
         ],
-        skills: ["Java", "C++", "Python", "System Design", "Cloud Computing"],
+        skills: ["Problem Solving", "Teamwork", "Communication", "Technical Proficiency", "Adaptability"],
         examRounds: [
-            { round: 1, name: "Online Coding Challenge", date: "Oct 25, 2026", description: "DSA and Algorithmic problems (120 mins)" },
-            { round: 2, name: "Technical Interview - HLD", date: "Oct 28, 2026", description: "High Level System Design and Scalability" },
-            { round: 3, name: "Technical Interview - DSA", date: "Oct 30, 2026", description: "Problem solving and coding efficiency" },
-            { round: 4, name: "HR & Cultural Fit", date: "Nov 05, 2026", description: "Core values and behavioral assessment" }
+            { round: 1, name: "Initial Screening", date: "TBD", description: `Brief introduction and resume review by ${companyName} recruiters.` },
+            { round: 2, name: "Technical Assessment", date: "TBD", description: `Evaluation of core ${jobRole} skills and problem-solving abilities.` },
+            { round: 3, name: "Final Interview", date: "TBD", description: "In-depth discussion on projects, experience, and cultural fit." }
         ],
         criteria: {
             cgpa: job.criteria?.cgpa || "7.0 & Above",
-            branches: job.criteria?.branches || ["CSE", "IT", "ECE"],
+            branches: job.criteria?.branches || ["CSE", "IT", "ECE", "EEE"],
             backlogs: job.criteria?.backlogs || "No active backlogs"
-        }
+        },
+        editDeadline: "Oct 25, 2026"
     };
 
     // Merge API data with fallbacks
@@ -91,7 +76,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
             cgpa: job.criteria?.cgpa && job.criteria?.cgpa !== "N/A" ? job.criteria.cgpa : fallbackData.criteria.cgpa,
             branches: (job.criteria?.branches && job.criteria.branches.length > 0) ? job.criteria.branches : fallbackData.criteria.branches,
             backlogs: job.criteria?.backlogs && job.criteria?.backlogs !== "N/A" ? job.criteria.backlogs : fallbackData.criteria.backlogs,
-        }
+        },
+        editDeadline: job.editDeadline || fallbackData.editDeadline
     };
 
     return (

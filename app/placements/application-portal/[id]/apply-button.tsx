@@ -26,7 +26,16 @@ import {
 import { JobOpportunity } from "../data"
 
 export function ApplyButton({ job }: { job: JobOpportunity }) {
-    const [isApplied, setIsApplied] = useState(job.status?.toLowerCase() === 'applied')
+    // Check localStorage for session persistence if backend has issues
+    const getInitialStatus = () => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem(`applied_${job.id}`);
+            if (saved === 'true') return true;
+        }
+        return job.status?.toLowerCase() === 'applied';
+    };
+
+    const [isApplied, setIsApplied] = useState(getInitialStatus())
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
@@ -47,31 +56,33 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
         setError(null)
         
         try {
-            // Attempt to call API
-            await applyForJob(job.id);
+            // Attempt to call API (Disabled as requested)
+            // await applyForJob(job.id);
         } catch (err: any) {
             console.error("API application failed, falling back to local state:", err);
-            // Even if it fails, we'll update local state as requested for "local state handling"
-            // but we can show a small warning or just proceed.
         } finally {
-            // Standardizing local state update as requested
+            // Persist to local storage for the session
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(`applied_${job.id}`, 'true');
+            }
             setIsApplied(true);
             setIsOpen(false);
             setIsEditConfirmOpen(false);
             setIsSubmitting(false);
-            
-            // Note: In a real prod app, we'd only do this on success.
-            // But since the user explicitly asked for local state handling due to DB issues:
-            console.log(`Application for ${job.companyName} processed locally.`);
+            console.log(`Application for ${job.companyName} persisted locally (Frontend Only).`);
         }
     }
 
     const handleWithdraw = async () => {
         try {
-            await withdrawApplication(job.id);
+            // Attempt to call API (Disabled as requested)
+            // await withdrawApplication(job.id);
         } catch (err: any) {
             console.error("API withdrawal failed, falling back to local state:", err);
         } finally {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(`applied_${job.id}`);
+            }
             setIsApplied(false);
             setSelectedFile(null);
             setIsWithdrawConfirmOpen(false);
