@@ -6,7 +6,7 @@ import {
     Loader2, Building2, MapPin, Calendar, ChevronLeft,
     IndianRupee, Briefcase, Code2, GraduationCap,
     AlertCircle, CheckCircle2, Clock, Send,
-    ExternalLink, AlertTriangle
+    ExternalLink, AlertTriangle, Search
 } from "lucide-react";
 import Link from "next/link";
 import { ApplyButton } from "./apply-button";
