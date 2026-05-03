@@ -23,9 +23,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { JobOpportunity } from "../data"
+import { usePlacements } from "@/components/placements-provider"
+import { JobListing } from "@/lib/api"
 
-export function ApplyButton({ job }: { job: JobOpportunity }) {
+export function ApplyButton({ job }: { job: JobListing }) {
+    const { refreshJobs } = usePlacements();
+
     // Check localStorage for session persistence if backend has issues
     const getInitialStatus = () => {
         if (typeof window !== 'undefined') {
@@ -69,7 +72,8 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
             setIsOpen(false);
             setIsEditConfirmOpen(false);
             setIsSubmitting(false);
-            console.log(`Application for ${job.companyName} persisted locally (Frontend Only).`);
+            refreshJobs(); // Sync global state
+            console.log(`Application for ${job.companyName || job.company_name} persisted locally (Frontend Only).`);
         }
     }
 
@@ -81,11 +85,12 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
             console.error("API withdrawal failed, falling back to local state:", err);
         } finally {
             if (typeof window !== 'undefined') {
-                localStorage.removeItem(`applied_${job.id}`);
+                localStorage.setItem(`applied_${job.id}`, 'withdrawn');
             }
             setIsApplied(false);
             setSelectedFile(null);
             setIsWithdrawConfirmOpen(false);
+            refreshJobs(); // Sync global state
         }
     }
 

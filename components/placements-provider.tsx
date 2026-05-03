@@ -36,16 +36,40 @@ export function PlacementsProvider({ children }: { children: React.ReactNode }) 
     }));
 
     const [jobs, setJobs] = useState<JobListing[]>(mappedJobs);
-    const [isLoading, setIsLoading] = useState(false); // Set to false since we use static data
+    const [isLoading, setIsLoading] = useState(false);
+
+    const syncAppliedStatus = useCallback(() => {
+        const updatedJobs = jobs.map(job => {
+            if (typeof window !== 'undefined') {
+                const status = localStorage.getItem(`applied_${job.id}`);
+                return {
+                    ...job,
+                    status: status === 'true' ? 'applied' : (status === 'withdrawn' ? 'withdrawn' : 'not_applied')
+                };
+            }
+            return job;
+        });
+        
+        const hasChanged = JSON.stringify(updatedJobs) !== JSON.stringify(jobs);
+        if (hasChanged) {
+            setJobs(updatedJobs);
+        }
+    }, [jobs]);
+
+    // Sync jobs with localStorage for "Applied" status
+    useEffect(() => {
+        syncAppliedStatus();
+        
+        // Listen for storage changes (in case other tabs apply)
+        window.addEventListener('storage', syncAppliedStatus);
+        return () => window.removeEventListener('storage', syncAppliedStatus);
+    }, [syncAppliedStatus]);
 
     const refreshJobs = useCallback(async () => {
-        // Skip API call as requested
-        console.log("Skipping DB call, using local state only.");
-    }, []);
-
-    useEffect(() => {
-        // No need to fetch
-    }, []);
+        // Trigger local sync instead of API call
+        syncAppliedStatus();
+        console.log("Local status sync triggered.");
+    }, [syncAppliedStatus]);
 
     const getJobById = useCallback((id: string) => {
         return jobs.find(j => j.id === id);
