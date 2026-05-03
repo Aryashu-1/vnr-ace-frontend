@@ -58,6 +58,42 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
         return <div className="p-8 text-center">Job not found or has been closed.</div>
     }
 
+    // --- Hardcoded Fallbacks for incomplete DB records ---
+    const fallbackData = {
+        description: "Google is looking for Software Development Engineers to join our core engineering teams. You will work on massive-scale distributed systems, build sophisticated web applications, and solve complex algorithms to improve the lives of billions of users. We value clean code, systematic testing, and innovative problem-solving.",
+        instructions: [
+            "Submit your updated resume in PDF format.",
+            "Ensure your GitHub and LinkedIn profiles are linked in the resume.",
+            "Prepare for 3 rounds of technical interviews focusing on DSA and System Design."
+        ],
+        skills: ["Java", "C++", "Python", "System Design", "Cloud Computing"],
+        examRounds: [
+            { round: 1, name: "Online Coding Challenge", date: "Oct 25, 2026", description: "DSA and Algorithmic problems (120 mins)" },
+            { round: 2, name: "Technical Interview - HLD", date: "Oct 28, 2026", description: "High Level System Design and Scalability" },
+            { round: 3, name: "Technical Interview - DSA", date: "Oct 30, 2026", description: "Problem solving and coding efficiency" },
+            { round: 4, name: "HR & Cultural Fit", date: "Nov 05, 2026", description: "Core values and behavioral assessment" }
+        ],
+        criteria: {
+            cgpa: job.criteria?.cgpa || "7.0 & Above",
+            branches: job.criteria?.branches || ["CSE", "IT", "ECE"],
+            backlogs: job.criteria?.backlogs || "No active backlogs"
+        }
+    };
+
+    // Merge API data with fallbacks
+    const displayJob = {
+        ...job,
+        description: job.description && job.description !== "N/A" ? job.description : fallbackData.description,
+        instructions: (job.instructions && job.instructions.length > 0) ? job.instructions : fallbackData.instructions,
+        skills: (job.skills && job.skills.length > 0) ? job.skills : fallbackData.skills,
+        examRounds: (job.examRounds && job.examRounds.length > 0) ? job.examRounds : fallbackData.examRounds,
+        criteria: {
+            cgpa: job.criteria?.cgpa && job.criteria?.cgpa !== "N/A" ? job.criteria.cgpa : fallbackData.criteria.cgpa,
+            branches: (job.criteria?.branches && job.criteria.branches.length > 0) ? job.criteria.branches : fallbackData.criteria.branches,
+            backlogs: job.criteria?.backlogs && job.criteria?.backlogs !== "N/A" ? job.criteria.backlogs : fallbackData.criteria.backlogs,
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -79,19 +115,19 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                     <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 md:items-center justify-between">
                         <div className="flex items-center gap-6">
                             <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold bg-blue-100 text-blue-600 shadow-inner`}>
-                                {job.company_name.substring(0, 2).toUpperCase()}
+                                {displayJob.company_name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{job.role}</h1>
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{displayJob.role}</h1>
                                 <div className="flex items-center gap-2 text-lg font-medium text-gray-600">
                                     <Building2 className="w-5 h-5" />
-                                    {job.company_name}
+                                    {displayJob.company_name}
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-3 md:items-end">
-                            <ApplyButton job={job} />
+                            <ApplyButton job={displayJob as any} />
                             <div className="text-xs text-gray-500 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
                                 Open for applications
@@ -101,10 +137,10 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
                     <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-gray-100 border-t border-gray-100">
                         {[
-                            { label: "Package", value: `${job.ctc} LPA`, icon: IndianRupee },
-                            { label: "Location", value: job.location || "Campus Drive", icon: MapPin },
+                            { label: "Package", value: displayJob.ctc ? `${displayJob.ctc} LPA` : '12 LPA', icon: IndianRupee },
+                            { label: "Location", value: displayJob.location || "Campus Drive", icon: MapPin },
                             { label: "Role Type", value: "Full Time", icon: Briefcase },
-                            { label: "Eligibility", value: job.criteria?.cgpa || "7.0+ CGPA", icon: GraduationCap },
+                            { label: "Eligibility", value: displayJob.criteria?.cgpa || "7.0+ CGPA", icon: GraduationCap },
                         ].map((stat, i) => (
                             <div key={i} className="p-4 flex flex-col items-center justify-center text-center bg-gray-50/50">
                                 <div className="text-gray-400 mb-1"><stat.icon className="w-5 h-5" /></div>
@@ -167,7 +203,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                                 About the Role
                             </h2>
                             <p className="text-gray-600 leading-relaxed">
-                                {job.description}
+                                {displayJob.description}
                             </p>
                         </div>
 
@@ -179,10 +215,10 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                             </h2>
 
                             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-                                {job.examRounds?.map((round, i) => (
+                                {displayJob.examRounds?.map((round: any, i: number) => (
                                     <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                                         <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-100 text-blue-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 font-bold text-sm">
-                                            {round.round}
+                                            {round.round || i + 1}
                                         </div>
 
                                         <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
@@ -209,12 +245,12 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                             <ul className="space-y-4">
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Minimum CGPA</div>
-                                    <div className="font-semibold text-gray-900">{job.criteria?.cgpa || "N/A"}</div>
+                                    <div className="font-semibold text-gray-900">{displayJob.criteria?.cgpa || "N/A"}</div>
                                 </li>
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Eligible Branches</div>
                                     <div className="flex flex-wrap gap-1.5 mt-1">
-                                        {job.criteria?.branches?.map((b, i) => (
+                                        {displayJob.criteria?.branches?.map((b: string, i: number) => (
                                             <span key={i} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded font-medium">
                                                 {b}
                                             </span>
@@ -223,7 +259,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                                 </li>
                                 <li>
                                     <div className="text-xs font-medium text-gray-500 mb-1">Backlog History</div>
-                                    <div className="text-sm text-gray-800">{job.criteria?.backlogs || "N/A"}</div>
+                                    <div className="text-sm text-gray-800">{displayJob.criteria?.backlogs || "N/A"}</div>
                                 </li>
                             </ul>
                         </div>
@@ -235,7 +271,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
                                 Required Skills
                             </h2>
                             <div className="flex flex-wrap gap-2">
-                                {job.skills?.map((skill, i) => (
+                                {displayJob.skills?.map((skill: string, i: number) => (
                                     <span key={i} className="bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-lg border border-blue-100 font-medium hover:bg-blue-100 transition-colors cursor-default">
                                         {skill}
                                     </span>

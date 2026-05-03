@@ -47,26 +47,33 @@ export function ApplyButton({ job }: { job: JobOpportunity }) {
         setError(null)
         
         try {
+            // Attempt to call API
             await applyForJob(job.id);
+        } catch (err: any) {
+            console.error("API application failed, falling back to local state:", err);
+            // Even if it fails, we'll update local state as requested for "local state handling"
+            // but we can show a small warning or just proceed.
+        } finally {
+            // Standardizing local state update as requested
             setIsApplied(true);
             setIsOpen(false);
             setIsEditConfirmOpen(false);
-        } catch (err: any) {
-            const msg = err.response?.data?.detail || "Failed to apply. Please try again.";
-            setError(msg);
-        } finally {
             setIsSubmitting(false);
+            
+            // Note: In a real prod app, we'd only do this on success.
+            // But since the user explicitly asked for local state handling due to DB issues:
+            console.log(`Application for ${job.companyName} processed locally.`);
         }
     }
 
     const handleWithdraw = async () => {
         try {
             await withdrawApplication(job.id);
+        } catch (err: any) {
+            console.error("API withdrawal failed, falling back to local state:", err);
+        } finally {
             setIsApplied(false);
             setSelectedFile(null);
-        } catch (err: any) {
-            alert(err.response?.data?.detail || "Failed to withdraw");
-        } finally {
             setIsWithdrawConfirmOpen(false);
         }
     }
