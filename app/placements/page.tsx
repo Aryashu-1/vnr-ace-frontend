@@ -93,8 +93,8 @@ export default function PlacementsPage() {
       return false
     }
 
-    // Faculty: Show ONLY Analytics
-    if (user.role === 'faculty' && card.title !== "Placement Analytics Dashboard") {
+    // Faculty: Show Analytics and Resume Analysis
+    if (user.role === 'faculty' && !["Placement Analytics Dashboard", "Resume Analysis"].includes(card.title)) {
       return false
     }
 
