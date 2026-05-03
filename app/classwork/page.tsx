@@ -24,7 +24,7 @@ export default function ClassworkPage() {
     return <SignInPrompt moduleName="Classwork" />
   }
 
-  const isAdmin = user.role === "admin"
+  const isAuthorized = user.role === "admin" || user.role === "faculty"
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -34,13 +34,13 @@ export default function ClassworkPage() {
             Academic Assistant Center
           </h1>
           <p className="text-gray-600 mt-1">
-            {isAdmin 
+            {isAuthorized 
               ? "Access all specialized academic intelligence agents." 
               : "Check faculty availability and schedules."}
           </p>
         </div>
 
-        {isAdmin && (
+        {isAuthorized && (
           <div className="flex p-1 bg-gray-100 rounded-xl border border-gray-200 self-start">
             <button
               onClick={() => setActiveTab('enquiry')}
@@ -77,9 +77,9 @@ export default function ClassworkPage() {
       </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {(!isAdmin || activeTab === 'enquiry') && <FacultyEnquiryAgent />}
-        {isAdmin && activeTab === 'report' && <ClassworkChatbot />}
-        {isAdmin && activeTab === 'mail' && <EmailAgent />}
+        {(!isAuthorized || activeTab === 'enquiry') && <FacultyEnquiryAgent />}
+        {isAuthorized && activeTab === 'report' && <ClassworkChatbot />}
+        {isAuthorized && activeTab === 'mail' && <EmailAgent />}
       </div>
     </div>
   )

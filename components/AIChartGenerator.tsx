@@ -16,12 +16,13 @@ export function AIChartGenerator() {
     const [error, setError] = useState<string | null>(null)
 
     const CHART_CONFIGS: Record<string, { title: string, type: 'line' | 'bar' | 'pie', color: string, xAxisKey?: string, dataKey?: string, nameKey?: string }> = {
-        "placement-trend": { title: "Placement Trend Over Years", type: "line", color: "#6366F1", xAxisKey: "year", dataKey: "count" },
-        "branch-wise": { title: "Branch-wise Placements", type: "bar", color: "#3B82F6", xAxisKey: "branch", dataKey: "placed" },
-        "salary-distribution": { title: "Salary Distribution (LPA)", type: "bar", color: "#10B981", xAxisKey: "bucket", dataKey: "count" },
-        "company-wise": { title: "Top Hiring Companies", type: "pie", color: "#F59E0B", nameKey: "company", dataKey: "hires" },
-        "minor-degree": { title: "Minor Degree Impact", type: "pie", color: "#EC4899" },
-        "multiple-offers": { title: "Multiple Offers Breakdown", type: "bar", color: "#F59E0B" }
+        "placement-trend": { title: "Placement Trend Over Years", type: "line", color: "#6366F1", xAxisKey: "name", dataKey: "value" },
+        "branch-wise": { title: "Branch-wise Placements", type: "bar", color: "#3B82F6", xAxisKey: "name", dataKey: "value" },
+        "branch-salary": { title: "Average Salary by Branch (LPA)", type: "bar", color: "#8B5CF6", xAxisKey: "name", dataKey: "avg_salary" },
+        "salary-distribution": { title: "Salary Distribution (LPA)", type: "bar", color: "#10B981", xAxisKey: "name", dataKey: "value" },
+        "company-wise": { title: "Top Hiring Companies", type: "pie", color: "#F59E0B", nameKey: "name", dataKey: "value" },
+        "minor-degree": { title: "Minor Degree Impact", type: "pie", color: "#EC4899", nameKey: "name", dataKey: "value" },
+        "multiple-offers": { title: "Multiple Offers Breakdown", type: "bar", color: "#F59E0B", xAxisKey: "name", dataKey: "value" }
     }
 
     const handleGenerate = async (e: React.FormEvent) => {
