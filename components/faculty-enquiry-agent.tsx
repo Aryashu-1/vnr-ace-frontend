@@ -121,12 +121,12 @@ export function FacultyEnquiryAgent() {
           <h3 className="font-bold text-gray-900 text-sm mb-3">Recent Enquiries</h3>
           <div className="space-y-2">
             {[
-              "What is the schedule for Mrs. Sneha Kumari on Monday?",
               "Where is Dr. K. Venkatesh right now?",
-              "Is Dr. K. Venkatesh free for a meeting on Thursday?",
-              "What is the schedule for Ms. Sana Inayath on Monday?",
-              "Where is Dr. S. Appa Rao on Saturday?",
-              "What is the venue for Engineering Chemistry (CE-A)?"
+              "What is the schedule for Section D on Monday?",
+              "Is Ms. Sana Inayath free during the 4th period on Tuesday?",
+              "What is the venue for BEC in year 1?",
+              "Show me the cabin location for Dr. S. Appa Rao.",
+              "Which faculty is teaching in Room 302 right now?"
             ].map(q => (
               <button key={q} onClick={() => setInput(q)} className="w-full text-left text-xs text-gray-600 p-2 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-all font-inter">
                 "{q}"

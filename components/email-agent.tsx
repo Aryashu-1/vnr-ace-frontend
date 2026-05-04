@@ -28,26 +28,63 @@ export function EmailAgent() {
   const handleProcess = async (approval?: 'approved' | 'rejected') => {
     setLoading(true)
     try {
-      const overrides = approval === 'approved' ? {
-        recipients: editRecipients.split(",").map(r => r.trim()).filter(r => r !== ""),
-        subject: editSubject,
-        body: editBody
-      } : undefined
-
-      const data = await sendEmailAutomation(input, approval, overrides)
-      
       if (approval === 'rejected') {
         setState(null)
         setLogs(prev => [...prev, "Draft rejected by user."])
-      } else {
-        setState(data.state)
-        if (data.reply) {
-          setLogs(prev => [...prev, data.reply])
-        }
-        if (data.state?.email_sent) {
-           setLogs(prev => [...prev, "Email successfully sent to recipients."])
-           setInput("")
-           setState(null)
+        return
+      }
+
+      const body = {
+        message: input,
+        approval,
+        recipients: approval === 'approved' ? editRecipients.split(",").map(r => r.trim()).filter(r => r !== "") : undefined,
+        subject: approval === 'approved' ? editSubject : undefined,
+        body: approval === 'approved' ? editBody : undefined
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aryashu-vnracebackend.hf.space/api/v1";
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+      const response = await fetch(`${API_URL}/classwork/email-automation`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(body)
+      })
+
+      const reader = response.body?.getReader()
+      if (!reader) return
+
+      const decoder = new TextDecoder()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              if (data.type === 'log') {
+                setLogs(prev => [...prev, data.content])
+              } else if (data.type === 'final') {
+                setState(data.state)
+                if (data.reply) setLogs(prev => [...prev, data.reply])
+                if (data.state?.email_sent) {
+                  setLogs(prev => [...prev, "🎉 Broadcast complete! Email has been sent."])
+                  setInput("")
+                }
+              } else if (data.type === 'error') {
+                setLogs(prev => [...prev, `❌ Error: ${data.content}`])
+              }
+            } catch (e) {
+              console.error("Error parsing stream chunk", e)
+            }
+          }
         }
       }
     } catch (err: any) {
@@ -89,12 +126,29 @@ export function EmailAgent() {
               <textarea 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="e.g. 'Draft an email to all students with attendance < 75% informing them about extra classes.'"
+                placeholder="e.g. 'Draft an email to Section D students with attendance < 75% informing them about extra classes at 2 PM on Friday.'"
                 className="w-full h-40 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none focus:border-emerald-500 focus:bg-white transition-all resize-none font-inter leading-relaxed"
               />
               <div className="absolute bottom-3 right-3 text-[10px] text-gray-400 font-mono">
                 {input.length} chars
               </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 mt-2">
+                {[
+                    "Attendance < 75% warning",
+                    "Extra classes for Section D",
+                    "Parent meeting for low grades",
+                    "Placement drive reminder"
+                ].map(q => (
+                    <button 
+                        key={q} 
+                        onClick={() => setInput(q === "Attendance < 75% warning" ? "Draft a warning email to all students with attendance below 75%." : q)}
+                        className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md hover:bg-emerald-100 transition-colors font-bold border border-emerald-100"
+                    >
+                        {q}
+                    </button>
+                ))}
             </div>
 
             <button 

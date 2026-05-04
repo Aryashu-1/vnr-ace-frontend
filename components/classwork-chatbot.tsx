@@ -160,7 +160,7 @@ export function ClassworkChatbot() {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="e.g. 'Generate report of IT students with backlogs > 2'..."
+                        placeholder="e.g. 'Generate report of students with attendance < 75% in CSE-C'..."
                         className="flex-1 px-4 py-2 bg-transparent text-sm outline-none text-gray-700 placeholder:text-gray-400 font-inter"
                     />
                     <button
@@ -171,6 +171,22 @@ export function ClassworkChatbot() {
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </button>
                 </form>
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {[
+                        "Attendance < 75% in IT-A",
+                        "Top 10 students by CGPA",
+                        "Mid-1 performance analysis",
+                        "Backlogs > 2 in Section D"
+                    ].map(q => (
+                        <button 
+                            key={q} 
+                            onClick={() => setInput(`Generate report for: ${q}`)}
+                            className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-100 transition-colors font-bold border border-indigo-100"
+                        >
+                            {q}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     )
