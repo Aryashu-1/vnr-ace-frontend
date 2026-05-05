@@ -83,24 +83,49 @@ export function ClassworkChatbot() {
     }
 
     const downloadCsv = (content: string, id: string) => {
-        // Simple logic to extract tables and convert to CSV
-        // If it's a markdown table, we can parse it
         const rows = content.split("\n");
         let csvContent = "";
         
+        // 1. Try to parse Markdown tables
         rows.forEach(row => {
             if (row.includes("|")) {
-                const cols = row.split("|").filter(c => c.trim() !== "").map(c => `"${c.trim().replace(/"/g, '""')}"`);
+                const cols = row.split("|")
+                    .map(c => c.trim())
+                    .filter(c => c !== "")
+                    .map(c => `"${c.replace(/"/g, '""')}"`);
+                
                 if (cols.length > 0 && !cols[0].includes("---")) {
                     csvContent += cols.join(",") + "\n";
                 }
-            } else if (row.trim() !== "") {
-                // Non-table lines can be ignored or added as comments
             }
         });
 
+        // 2. Fallback: Try to parse "Preview rows: [...]" if no table was found
+        if (!csvContent || csvContent.trim().split("\n").length <= 1) {
+            const previewMatch = content.match(/Preview rows:\s*(\[[\s\S]*?\])/);
+            if (previewMatch) {
+                try {
+                    // This is a rough parse for Python-like list of dicts string
+                    // We'll try to convert it to valid JSON if possible, or use a heuristic
+                    const rawJson = previewMatch[1]
+                        .replace(/'/g, '"')
+                        .replace(/UUID\("(.*?)"\)/g, '"$1"')
+                        .replace(/nan/g, 'null');
+                    const data = JSON.parse(rawJson);
+                    if (Array.isArray(data) && data.length > 0) {
+                        const headers = Object.keys(data[0]);
+                        csvContent = headers.join(",") + "\n";
+                        data.forEach((row: any) => {
+                            csvContent += headers.map(h => `"${(row[h] ?? "").toString().replace(/"/g, '""')}"`).join(",") + "\n";
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to parse preview rows fallback", e);
+                }
+            }
+        }
+
         if (!csvContent) {
-            // Fallback: just download the text
             csvContent = content;
         }
 

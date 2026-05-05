@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Send, User, Loader2, Code, Terminal, Download } from "lucide-react"
+import { Search, Send, User, Loader2, Code, Terminal } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { sendFacultyEnquiry } from "@/lib/api"
 import { MarkdownText } from "./markdown-text"
@@ -49,25 +49,7 @@ export function FacultyEnquiryAgent() {
     }
   }
 
-  const downloadCsv = (content: string, id: string) => {
-    const rows = content.split("\n");
-    let csvContent = "";
-    rows.forEach(row => {
-        if (row.includes("|")) {
-            const cols = row.split("|").filter(c => c.trim() !== "").map(c => `"${c.trim().replace(/"/g, '""')}"`);
-            if (cols.length > 0 && !cols[0].includes("---")) {
-                csvContent += cols.join(",") + "\n";
-            }
-        }
-    });
-    if (!csvContent) csvContent = content;
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `timetable_${id}.csv`);
-    link.click();
-  }
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
@@ -84,14 +66,6 @@ export function FacultyEnquiryAgent() {
                 {m.role === 'ai' ? (
                   <>
                     <MarkdownText text={m.content} />
-                    <div className="mt-2 pt-2 border-t border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <button 
-                          onClick={() => downloadCsv(m.content, m.id)}
-                          className="flex items-center gap-1.5 text-[10px] font-bold text-purple-600 hover:text-purple-800 transition-colors"
-                       >
-                          <Download className="w-3 h-3" /> Export to CSV
-                       </button>
-                    </div>
                   </>
                 ) : (
                   m.content
