@@ -1,11 +1,12 @@
 "use client"
 
-import { Search, Send, User, Loader2, Code, Terminal } from "lucide-react"
+import { Search, Send, User, Loader2, Code, Terminal, Download } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { sendFacultyEnquiry } from "@/lib/api"
 import { MarkdownText } from "./markdown-text"
 
 interface Message {
+  id: string
   role: 'user' | 'ai'
   content: string
   sql?: string
@@ -29,22 +30,43 @@ export function FacultyEnquiryAgent() {
     if (!input.trim() || loading) return
 
     const userMsg = input
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }])
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: userMsg }])
     setInput("")
     setLoading(true)
 
     try {
       const data = await sendFacultyEnquiry(userMsg)
       setMessages(prev => [...prev, { 
+        id: (Date.now() + 1).toString(),
         role: 'ai', 
         content: data.reply,
         sql: data.metadata?.sql // Capture SQL from metadata if present
       }])
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I couldn't reach the enquiry service." }])
+      setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'ai', content: "Sorry, I couldn't reach the enquiry service." }])
     } finally {
       setLoading(false)
     }
+  }
+
+  const downloadCsv = (content: string, id: string) => {
+    const rows = content.split("\n");
+    let csvContent = "";
+    rows.forEach(row => {
+        if (row.includes("|")) {
+            const cols = row.split("|").filter(c => c.trim() !== "").map(c => `"${c.trim().replace(/"/g, '""')}"`);
+            if (cols.length > 0 && !cols[0].includes("---")) {
+                csvContent += cols.join(",") + "\n";
+            }
+        }
+    });
+    if (!csvContent) csvContent = content;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `timetable_${id}.csv`);
+    link.click();
   }
 
   return (
@@ -58,9 +80,19 @@ export function FacultyEnquiryAgent() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'}`}>
+              <div className={`max-w-[80%] p-3 rounded-lg text-sm group ${m.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'}`}>
                 {m.role === 'ai' ? (
-                  <MarkdownText text={m.content} />
+                  <>
+                    <MarkdownText text={m.content} />
+                    <div className="mt-2 pt-2 border-t border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                       <button 
+                          onClick={() => downloadCsv(m.content, m.id)}
+                          className="flex items-center gap-1.5 text-[10px] font-bold text-purple-600 hover:text-purple-800 transition-colors"
+                       >
+                          <Download className="w-3 h-3" /> Export to CSV
+                       </button>
+                    </div>
+                  </>
                 ) : (
                   m.content
                 )}
@@ -121,12 +153,12 @@ export function FacultyEnquiryAgent() {
           <h3 className="font-bold text-gray-900 text-sm mb-3">Recent Enquiries</h3>
           <div className="space-y-2">
             {[
-              "Where is Dr. Ravi's cabin?",
-              "Show me the timetable for section CSE-A on Monday.",
-              "When is Prof. Smith free today?",
-              "What classes are scheduled in room B-201 on Tuesday?",
-              "Who is teaching 'Machine Learning' to section IT-B?",
-              "Is Dr. Anjali free at 2 PM on Wednesday?"
+              "Where is Dr. Ravi Kumar's cabin?",
+              "Show me the timetable for CSE Section A",
+              "Who is teaching maths to CSE Section A?",
+              "What classes are in room E-101 on Wednesday?",
+              "Is Dr. M. Madhubala free at 11 AM on Monday?",
+              "Show me the schedule for Mr. N. Praveen."
             ].map(q => (
               <button key={q} onClick={() => setInput(q)} className="w-full text-left text-xs text-gray-600 p-2 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-all font-inter">
                 "{q}"

@@ -82,6 +82,39 @@ export function ClassworkChatbot() {
         window.open(url, "_blank")
     }
 
+    const downloadCsv = (content: string, id: string) => {
+        // Simple logic to extract tables and convert to CSV
+        // If it's a markdown table, we can parse it
+        const rows = content.split("\n");
+        let csvContent = "";
+        
+        rows.forEach(row => {
+            if (row.includes("|")) {
+                const cols = row.split("|").filter(c => c.trim() !== "").map(c => `"${c.trim().replace(/"/g, '""')}"`);
+                if (cols.length > 0 && !cols[0].includes("---")) {
+                    csvContent += cols.join(",") + "\n";
+                }
+            } else if (row.trim() !== "") {
+                // Non-table lines can be ignored or added as comments
+            }
+        });
+
+        if (!csvContent) {
+            // Fallback: just download the text
+            csvContent = content;
+        }
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `report_${id}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     return (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-xl h-[650px] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
@@ -117,20 +150,23 @@ export function ClassworkChatbot() {
                                     <p className="whitespace-pre-wrap">{message.content}</p>
                                 )}
                                 
-                                {message.artifact_path && (
-                                    <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-indigo-600">
-                                            <div className="p-1.5 bg-indigo-50 rounded-lg">
-                                                <Download className="w-3.5 h-3.5" />
-                                            </div>
-                                            REPORT READY FOR DOWNLOAD
-                                        </div>
-                                        <button 
-                                            onClick={() => downloadArtifact(message.artifact_path!)}
-                                            className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all font-bold text-xs shadow-md shadow-emerald-100"
-                                        >
-                                            <Download className="w-4 h-4" /> Download Excel Report
-                                        </button>
+                                {message.role === "assistant" && (
+                                    <div className={`mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2 ${message.artifact_path ? "" : "opacity-0 group-hover:opacity-100 transition-opacity"}`}>
+                                        {message.artifact_path ? (
+                                            <button 
+                                                onClick={() => downloadArtifact(message.artifact_path!)}
+                                                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl transition-all font-bold text-xs shadow-md shadow-emerald-100"
+                                            >
+                                                <Download className="w-4 h-4" /> Download Excel Report
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => downloadCsv(message.content, message.id)}
+                                                className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                                            >
+                                                <Download className="w-3.5 h-3.5" /> Export Answer to CSV
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -173,12 +209,12 @@ export function ClassworkChatbot() {
                 </form>
                 <div className="mt-3 flex flex-wrap gap-2">
                     {[
-                        "Attendance < 75% in IT-A",
-                        "Students with CGPA > 8.5 in CSE",
-                        "Defaulters (attendance < 75%) in ECE-B",
-                        "Students with > 2 backlogs in Mechanical",
-                        "Performance report for Data Structures",
-                        "Student list for 3rd year CSE-C"
+                        "Attendance < 75% in CSE Section A",
+                        "Students with CGPA > 9.0 in CSE",
+                        "Defaulters list for IT Section B",
+                        "Students with > 1 backlog in Mechanical",
+                        "Performance report for Engineering Chemistry",
+                        "Student list for 1st year CSE Section C"
                     ].map(q => (
                         <button 
                             key={q} 
