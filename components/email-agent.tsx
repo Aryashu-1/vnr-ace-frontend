@@ -2,7 +2,7 @@
 
 import { Mail, Send, CheckCircle, XCircle, Loader2, MessageSquare, Plus, Trash2, Edit3, UserPlus } from "lucide-react"
 import { useState, useEffect } from "react"
-import { sendEmailAutomation } from "@/lib/api"
+import { API_BASE_URL, getToken, sendEmailAutomation } from "@/lib/api"
 
 export function EmailAgent() {
   const [input, setInput] = useState("")
@@ -42,10 +42,9 @@ export function EmailAgent() {
         body: approval === 'approved' ? editBody : undefined
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aryashu-vnracebackend.hf.space/api/v1";
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = getToken();
 
-      const response = await fetch(`${API_URL}/classwork/email-automation`, {
+      const response = await fetch(`${API_BASE_URL}/classwork/email-automation`, {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',

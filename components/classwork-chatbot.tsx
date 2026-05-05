@@ -174,9 +174,11 @@ export function ClassworkChatbot() {
                 <div className="mt-3 flex flex-wrap gap-2">
                     {[
                         "Attendance < 75% in IT-A",
-                        "Top 10 students by CGPA",
-                        "Mid-1 performance analysis",
-                        "Backlogs > 2 in Section D"
+                        "Students with CGPA > 8.5 in CSE",
+                        "Defaulters (attendance < 75%) in ECE-B",
+                        "Students with > 2 backlogs in Mechanical",
+                        "Performance report for Data Structures",
+                        "Student list for 3rd year CSE-C"
                     ].map(q => (
                         <button 
                             key={q} 
